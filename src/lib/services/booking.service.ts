@@ -3,6 +3,7 @@ import { BookingStatus, TripType } from '@prisma/client';
 import { CreateBookingInput, UpdateBookingStatusInput } from '@/lib/validators/booking.schema';
 import { VehicleService } from './vehicle.service';
 import { DriverService } from './driver.service';
+import { EmailService } from './email.service';
 
 export class BookingService {
   /**
@@ -177,7 +178,7 @@ export class BookingService {
     input: UpdateBookingStatusInput,
     adminId?: string
   ) {
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
         where: { id },
         include: { payments: true },
@@ -332,7 +333,7 @@ export class BookingService {
 
       const calculatedBalance = Math.max(0, effectiveFinalPrice - totalPaidSum);
 
-      return tx.booking.update({
+      const updated = await tx.booking.update({
         where: { id },
         data: {
           status: input.status,
@@ -350,7 +351,56 @@ export class BookingService {
           payments: true,
         },
       });
+
+      return {
+        ...updated,
+        _previousStatus: booking.status,
+      };
     });
+
+    // Send non-blocking email notification on status change (avoiding duplicate emails)
+    const previousStatus = (result as { _previousStatus?: BookingStatus })._previousStatus;
+    const newStatus = result.status;
+
+    if (previousStatus && previousStatus !== newStatus) {
+      const isAdvancePaid = result.payments?.some(
+        (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
+      );
+
+      const emailPayload = {
+        bookingRef: result.bookingRef,
+        customerName: result.customerName,
+        customerEmail: result.customerEmail,
+        customerPhone: result.customerPhone,
+        vehicleName: result.vehicle?.name,
+        vehicleType: result.vehicle?.vehicleType,
+        pickupLocation: result.pickupLocation,
+        dropLocation: result.dropLocation,
+        pickupDatetime: result.pickupDatetime,
+        returnDatetime: result.returnDatetime,
+        status: result.status,
+        finalPrice: result.finalPrice || result.estimatedPrice,
+        advanceAmount: result.advanceAmount,
+        balanceAmount: result.balanceAmount,
+        isAdvancePaid,
+      };
+
+      if (newStatus === BookingStatus.CONFIRMED) {
+        EmailService.sendBookingConfirmation(emailPayload).catch((err) => {
+          console.error('[BookingService] Failed to dispatch confirmation email:', err);
+        });
+      } else if (newStatus === BookingStatus.CANCELLED) {
+        EmailService.sendBookingCancellation(emailPayload).catch((err) => {
+          console.error('[BookingService] Failed to dispatch cancellation email:', err);
+        });
+      } else if (newStatus === BookingStatus.COMPLETED) {
+        EmailService.sendBookingCompletion(emailPayload).catch((err) => {
+          console.error('[BookingService] Failed to dispatch completion email:', err);
+        });
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -402,7 +452,7 @@ export class BookingService {
         : reasonEntry;
     }
 
-    return prisma.booking.update({
+    const cancelledBooking = await prisma.booking.update({
       where: { id: booking.id },
       data: {
         status: BookingStatus.CANCELLED,
@@ -414,5 +464,33 @@ export class BookingService {
         payments: true,
       },
     });
+
+    const isAdvancePaid = cancelledBooking.payments?.some(
+      (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
+    );
+
+    // Send non-blocking cancellation email
+    EmailService.sendBookingCancellation({
+      bookingRef: cancelledBooking.bookingRef,
+      customerName: cancelledBooking.customerName,
+      customerEmail: cancelledBooking.customerEmail,
+      customerPhone: cancelledBooking.customerPhone,
+      vehicleName: cancelledBooking.vehicle?.name,
+      vehicleType: cancelledBooking.vehicle?.vehicleType,
+      pickupLocation: cancelledBooking.pickupLocation,
+      dropLocation: cancelledBooking.dropLocation,
+      pickupDatetime: cancelledBooking.pickupDatetime,
+      returnDatetime: cancelledBooking.returnDatetime,
+      status: cancelledBooking.status,
+      finalPrice: cancelledBooking.finalPrice || cancelledBooking.estimatedPrice,
+      advanceAmount: cancelledBooking.advanceAmount,
+      balanceAmount: cancelledBooking.balanceAmount,
+      isAdvancePaid,
+      cancellationReason: input.reason?.trim() || null,
+    }).catch((err) => {
+      console.error('[BookingService] Failed to dispatch customer cancellation email:', err);
+    });
+
+    return cancelledBooking;
   }
 }

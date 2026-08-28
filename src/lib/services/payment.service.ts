@@ -1,6 +1,7 @@
 import prisma from '@/lib/db';
 import { PaymentStatus, PaymentType, Prisma } from '@prisma/client';
 import { paymentGateway } from './payment-gateway.provider';
+import { EmailService } from './email.service';
 
 export interface VerifyPaymentInput {
   bookingRef: string;
@@ -137,10 +138,10 @@ export class PaymentService {
     }
 
     // 2. Atomic Transaction: Record payment & update booking
-    return prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
         where: { bookingRef },
-        include: { payments: true },
+        include: { payments: true, vehicle: true },
       });
 
       if (!booking) {
@@ -160,7 +161,7 @@ export class PaymentService {
       }
 
       if (payment.status === PaymentStatus.PAID) {
-        return { success: true, message: 'Payment already processed', payment };
+        return { success: true, message: 'Payment already processed', payment, booking, newlyVerified: false };
       }
 
       // Update payment record to PAID
@@ -203,8 +204,41 @@ export class PaymentService {
         message: 'Advance payment verified and credited successfully',
         payment: updatedPayment,
         balanceRemaining: newBalance,
+        booking,
+        newlyVerified: true,
       };
     });
+
+    // Dispatch non-blocking payment success email if newly verified
+    if (result.newlyVerified && result.booking) {
+      EmailService.sendPaymentSuccess({
+        bookingRef: result.booking.bookingRef,
+        customerName: result.booking.customerName,
+        customerEmail: result.booking.customerEmail,
+        customerPhone: result.booking.customerPhone,
+        vehicleName: result.booking.vehicle?.name,
+        vehicleType: result.booking.vehicle?.vehicleType,
+        pickupLocation: result.booking.pickupLocation,
+        dropLocation: result.booking.dropLocation,
+        pickupDatetime: result.booking.pickupDatetime,
+        returnDatetime: result.booking.returnDatetime,
+        status: 'CONFIRMED',
+        finalPrice: result.booking.finalPrice || result.booking.estimatedPrice,
+        advanceAmount: result.payment.amount,
+        balanceAmount: result.balanceRemaining,
+        isAdvancePaid: true,
+        paymentRef: paymentId,
+      }).catch((err) => {
+        console.error('[PaymentService] Failed to dispatch payment success email:', err);
+      });
+    }
+
+    return {
+      success: result.success,
+      message: result.message,
+      payment: result.payment,
+      balanceRemaining: result.balanceRemaining,
+    };
   }
 
   /**
@@ -240,11 +274,11 @@ export class PaymentService {
         return { received: true, ignored: true, reason: 'Missing order_id in webhook payload' };
       }
 
-      return prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx) => {
         // Find matching pending payment record
         const payment = await tx.payment.findFirst({
           where: { transactionRef: orderId },
-          include: { booking: true },
+          include: { booking: { include: { vehicle: true } } },
         });
 
         if (!payment) {
@@ -302,7 +336,6 @@ export class PaymentService {
           },
         });
 
-
         // Recalculate booking balance
         const totalPaid = await tx.payment.aggregate({
           where: {
@@ -324,15 +357,42 @@ export class PaymentService {
           },
         });
 
-
         return {
           received: true,
           success: true,
           paymentId: updatedPayment.id,
           bookingRef: payment.booking.bookingRef,
           balanceRemaining: newBalance,
+          booking: payment.booking,
+          amount: updatedPayment.amount,
+          newlyVerified: true,
         };
       });
+
+      if (result.newlyVerified && result.booking) {
+        EmailService.sendPaymentSuccess({
+          bookingRef: result.booking.bookingRef,
+          customerName: result.booking.customerName,
+          customerEmail: result.booking.customerEmail,
+          customerPhone: result.booking.customerPhone,
+          vehicleName: result.booking.vehicle?.name,
+          vehicleType: result.booking.vehicle?.vehicleType,
+          pickupLocation: result.booking.pickupLocation,
+          dropLocation: result.booking.dropLocation,
+          pickupDatetime: result.booking.pickupDatetime,
+          returnDatetime: result.booking.returnDatetime,
+          status: 'CONFIRMED',
+          finalPrice: result.booking.finalPrice || result.booking.estimatedPrice,
+          advanceAmount: result.amount,
+          balanceAmount: result.balanceRemaining,
+          isAdvancePaid: true,
+          paymentRef: paymentId,
+        }).catch((err) => {
+          console.error('[PaymentService] Failed to dispatch webhook payment success email:', err);
+        });
+      }
+
+      return result;
     }
 
     return { received: true, status: 'acknowledged', eventType };
