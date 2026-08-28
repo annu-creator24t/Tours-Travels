@@ -166,4 +166,14 @@ export const RATE_LIMIT_CONFIGS = {
     maxRequests: parseInt(process.env.RATE_LIMIT_CANCEL_MAX || '10', 10),
     windowMs: parseInt(process.env.RATE_LIMIT_CANCEL_WINDOW_MS || '600000', 10), // 10 mins
   },
+  // Payment operations: default 15 requests per 10 minutes per IP
+  PAYMENT_OPERATIONS: {
+    maxRequests: parseInt(process.env.RATE_LIMIT_PAYMENT_MAX || '15', 10),
+    windowMs: parseInt(process.env.RATE_LIMIT_PAYMENT_WINDOW_MS || '600000', 10), // 10 mins
+  },
+  // Admin login attempts: default 5 attempts per 15 minutes per IP (brute-force defense)
+  ADMIN_LOGIN: {
+    maxRequests: parseInt(process.env.RATE_LIMIT_LOGIN_MAX || '5', 10),
+    windowMs: parseInt(process.env.RATE_LIMIT_LOGIN_WINDOW_MS || '900000', 10), // 15 mins
+  },
 };

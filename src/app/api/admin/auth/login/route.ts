@@ -2,8 +2,19 @@ import { NextResponse } from 'next/server';
 import { AuthService } from '@/lib/services/auth.service';
 import { loginSchema } from '@/lib/validators/auth.schema';
 import { AUTH_COOKIE_NAME } from '@/lib/auth';
+import { applyRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
+  // Rate limiting check to prevent brute-force attacks on admin credentials
+  const rateLimitResponse = applyRateLimit(
+    request,
+    'POST_admin_login',
+    RATE_LIMIT_CONFIGS.ADMIN_LOGIN
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const validatedData = loginSchema.parse(body);

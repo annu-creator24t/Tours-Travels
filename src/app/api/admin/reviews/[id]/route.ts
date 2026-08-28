@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ReviewService } from '@/lib/services/review.service';
+import { getCurrentAdminSession } from '@/lib/auth';
 import prisma from '@/lib/db';
 import { z } from 'zod';
 
@@ -12,6 +13,14 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = reviewApprovalSchema.parse(body);
 
@@ -39,6 +48,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     await prisma.review.delete({
       where: { id: params.id },
     });

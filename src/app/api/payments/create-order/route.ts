@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PaymentService } from '@/lib/services/payment.service';
+import { applyRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { z } from 'zod';
 
 const createAdvanceOrderSchema = z.object({
@@ -7,6 +8,16 @@ const createAdvanceOrderSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Rate limiting check
+  const rateLimitResponse = applyRateLimit(
+    request,
+    'POST_payment_create_order',
+    RATE_LIMIT_CONFIGS.PAYMENT_OPERATIONS
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const { bookingRef } = createAdvanceOrderSchema.parse(body);

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { PaymentService } from '@/lib/services/payment.service';
+import { applyRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { z } from 'zod';
 
 const verifyPaymentSchema = z.object({
@@ -11,6 +12,16 @@ const verifyPaymentSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  // Rate limiting check
+  const rateLimitResponse = applyRateLimit(
+    request,
+    'POST_payment_verify',
+    RATE_LIMIT_CONFIGS.PAYMENT_OPERATIONS
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const validatedData = verifyPaymentSchema.parse(body);

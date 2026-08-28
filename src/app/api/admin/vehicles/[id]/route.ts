@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { VehicleService } from '@/lib/services/vehicle.service';
 import { updateVehicleSchema } from '@/lib/validators/vehicle.schema';
+import { getCurrentAdminSession } from '@/lib/auth';
 import prisma from '@/lib/db';
 
 export async function GET(
@@ -8,6 +9,14 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     const vehicle = await VehicleService.getVehicleById(params.id);
 
     if (!vehicle) {
@@ -35,6 +44,14 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = updateVehicleSchema.parse(body);
 
@@ -59,6 +76,14 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     await prisma.vehicle.delete({
       where: { id: params.id },
     });

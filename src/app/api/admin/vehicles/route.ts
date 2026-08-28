@@ -1,9 +1,18 @@
 import { NextResponse } from 'next/server';
 import { VehicleService } from '@/lib/services/vehicle.service';
 import { createVehicleSchema } from '@/lib/validators/vehicle.schema';
+import { getCurrentAdminSession } from '@/lib/auth';
 
 export async function GET() {
   try {
+    const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     const vehicles = await VehicleService.getAllVehiclesAdmin();
     return NextResponse.json({
       success: true,
@@ -21,6 +30,14 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = createVehicleSchema.parse(body);
 

@@ -16,9 +16,12 @@ export async function GET(
       );
     }
 
+    // Exclude internal admin notes and internal admin IDs from public tracking response
+    const { adminNotes, managedByAdminId, ...publicBooking } = booking;
+
     return NextResponse.json({
       success: true,
-      data: booking,
+      data: publicBooking,
     });
   } catch (error: unknown) {
     const message =
