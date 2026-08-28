@@ -9,6 +9,14 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
@@ -45,13 +53,20 @@ export async function PATCH(
 ) {
   try {
     const session = await getCurrentAdminSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin session required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const validatedData = updateBookingStatusSchema.parse(body);
 
     const updatedBooking = await BookingService.updateBookingStatus(
       params.id,
       validatedData,
-      session?.id
+      session.id
     );
 
     return NextResponse.json({

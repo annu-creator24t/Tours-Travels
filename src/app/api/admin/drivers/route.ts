@@ -4,7 +4,7 @@ import { createDriverSchema } from '@/lib/validators/driver.schema';
 import { getCurrentAdminSession } from '@/lib/auth';
 import { ZodError } from 'zod';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getCurrentAdminSession();
     if (!session) {
@@ -14,7 +14,21 @@ export async function GET() {
       );
     }
 
-    const drivers = await DriverService.getAllDrivers();
+    const { searchParams } = new URL(request.url);
+    const availableOnly = searchParams.get('available') === 'true';
+    const pickupDatetime = searchParams.get('pickupDatetime');
+    const returnDatetime = searchParams.get('returnDatetime');
+    const excludeBookingId = searchParams.get('excludeBookingId') || undefined;
+
+    const drivers =
+      availableOnly || pickupDatetime
+        ? await DriverService.getAvailableDrivers(
+            pickupDatetime || undefined,
+            returnDatetime || undefined,
+            excludeBookingId
+          )
+        : await DriverService.getAllDrivers();
+
     return NextResponse.json({
       success: true,
       count: drivers.length,

@@ -2,6 +2,7 @@ import prisma from '@/lib/db';
 import { BookingStatus, TripType } from '@prisma/client';
 import { CreateBookingInput, UpdateBookingStatusInput } from '@/lib/validators/booking.schema';
 import { VehicleService } from './vehicle.service';
+import { DriverService } from './driver.service';
 
 export class BookingService {
   /**
@@ -185,6 +186,8 @@ export class BookingService {
         throw new Error('Booking record not found');
       }
 
+      const targetStatus = input.status !== undefined ? input.status : booking.status;
+
       const vehicleId =
         input.vehicleId !== undefined
           ? input.vehicleId && input.vehicleId.trim() !== ''
@@ -192,7 +195,7 @@ export class BookingService {
             : null
           : booking.vehicleId;
 
-      // Validate vehicle and driver existence if specified
+      // Validate vehicle existence and operational status if specified
       if (vehicleId) {
         const vehicle = await tx.vehicle.findUnique({ where: { id: vehicleId } });
         if (!vehicle) {
@@ -200,6 +203,9 @@ export class BookingService {
         }
         if (vehicle.status === 'INACTIVE') {
           throw new Error(`Cannot assign inactive vehicle (${vehicle.name})`);
+        }
+        if (vehicle.status === 'MAINTENANCE') {
+          throw new Error(`Cannot assign vehicle under maintenance (${vehicle.name})`);
         }
         if (booking.passengerCount > vehicle.seatingCapacity) {
           throw new Error(
@@ -223,10 +229,13 @@ export class BookingService {
         if (driver.status === 'INACTIVE') {
           throw new Error(`Cannot assign inactive driver (${driver.name})`);
         }
+        if (driver.status === 'OFF_DUTY') {
+          throw new Error(`Cannot assign off-duty driver (${driver.name})`);
+        }
       }
 
       // When transitioning to or maintaining CONFIRMED status with an assigned vehicle:
-      if (input.status === BookingStatus.CONFIRMED && vehicleId) {
+      if (targetStatus === BookingStatus.CONFIRMED && vehicleId) {
         const availability = await VehicleService.isVehicleAvailable(
           vehicleId,
           booking.pickupDatetime,
@@ -238,6 +247,23 @@ export class BookingService {
         if (!availability.available) {
           throw new Error(
             `Double-booking conflict prevented: ${availability.reason || 'Vehicle is not available for these dates.'}`
+          );
+        }
+      }
+
+      // When transitioning to or maintaining CONFIRMED status with an assigned driver:
+      if (targetStatus === BookingStatus.CONFIRMED && driverId) {
+        const driverAvailability = await DriverService.isDriverAvailable(
+          driverId,
+          booking.pickupDatetime,
+          booking.returnDatetime,
+          booking.id, // Exclude this booking so re-saving its own quote doesn't self-conflict
+          tx
+        );
+
+        if (!driverAvailability.available) {
+          throw new Error(
+            `Driver assignment conflict: ${driverAvailability.reason || 'Driver is not available for these dates.'}`
           );
         }
       }

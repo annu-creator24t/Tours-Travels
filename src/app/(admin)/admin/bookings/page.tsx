@@ -94,6 +94,7 @@ export default function AdminBookingsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Selected Booking for Modal
@@ -146,6 +147,7 @@ export default function AdminBookingsPage() {
 
   const handleOpenManageModal = (booking: BookingRecord) => {
     setSelectedBooking(booking);
+    setModalError(null);
     setModalFormData({
       status: booking.status,
       vehicleId: booking.vehicleId || '',
@@ -163,6 +165,7 @@ export default function AdminBookingsPage() {
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    setModalError(null);
     setSuccessMessage(null);
 
     const targetStatus = overrideStatus || modalFormData.status;
@@ -198,7 +201,9 @@ export default function AdminBookingsPage() {
       setSelectedBooking(null);
       loadData();
     } catch (err: unknown) {
-      setErrorMessage(err instanceof Error ? err.message : 'Error updating booking');
+      const msg = err instanceof Error ? err.message : 'Error updating booking';
+      setErrorMessage(msg);
+      setModalError(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -520,6 +525,23 @@ export default function AdminBookingsPage() {
               )}
             </div>
 
+            {/* In-Modal Error Notification */}
+            {modalError && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-xs flex items-center justify-between mb-4 shadow-sm">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
+                  <span className="font-medium">{modalError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalError(null)}
+                  className="text-rose-600 hover:text-rose-800"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             <form onSubmit={(e) => handleModalSubmit(e)} className="space-y-4 text-xs">
               {/* Status Transition Selector */}
               <div>
@@ -580,11 +602,18 @@ export default function AdminBookingsPage() {
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-xs"
                   >
                     <option value="">-- Unassigned --</option>
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.phone}) - {d.status}
-                      </option>
-                    ))}
+                    {drivers.map((d) => {
+                      const isUnavailable = d.status === 'INACTIVE' || d.status === 'OFF_DUTY';
+                      return (
+                        <option
+                          key={d.id}
+                          value={d.id}
+                          disabled={isUnavailable}
+                        >
+                          {d.name} ({d.phone}) - {d.status} {isUnavailable ? '(Unavailable)' : ''}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
