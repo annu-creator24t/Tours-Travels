@@ -96,7 +96,6 @@ export default async function BookingStatusPage({
   const hasAdvanceRequired = Boolean(
     booking.advanceAmount && Number(booking.advanceAmount) > 0
   );
-
   const finalPriceNum = Number(
     booking.finalPrice || booking.estimatedPrice || 0
   );
@@ -106,6 +105,48 @@ export default async function BookingStatusPage({
       ? booking.balanceAmount
       : Math.max(0, finalPriceNum - (isAdvancePaid ? advanceAmountNum : 0))
   );
+
+
+  const vehicleDisplay = booking.vehicle
+    ? `${booking.vehicle.brand} ${booking.vehicle.name}`
+    : 'Vehicle Allocated';
+
+  const formattedPickupDate = new Date(booking.pickupDatetime).toLocaleString(
+    'en-IN',
+    {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }
+  );
+
+  const whatsappNumber = companyConfig.whatsapp.replace(/[^0-9]/g, '');
+
+  const whatsappMessage =
+    booking.status === 'CONFIRMED' || booking.status === 'COMPLETED'
+      ? `Hello ${companyConfig.name},\n` +
+        `My booking reference is ${booking.bookingRef}.\n` +
+        `Customer: ${booking.customerName}\n` +
+        `Vehicle: ${vehicleDisplay}\n` +
+        `Route: ${booking.pickupLocation} → ${booking.dropLocation}\n` +
+        `Date: ${formattedPickupDate}\n` +
+        `Total Price: ₹${finalPriceNum}\n` +
+        `Advance Paid: ₹${isAdvancePaid ? advanceAmountNum : 0}${isAdvancePaid ? ' (PAID)' : ''}\n` +
+        `Remaining Balance: ₹${remainingBalanceNum}\n` +
+        `Booking Status: ${booking.status}`
+      : `Hello ${companyConfig.name},\n` +
+        `I have submitted a booking inquiry.\n` +
+        `Booking Ref: ${booking.bookingRef}\n` +
+        `Customer: ${booking.customerName}\n` +
+        `Vehicle: ${vehicleDisplay}\n` +
+        `Route: ${booking.pickupLocation} → ${booking.dropLocation}\n` +
+        `Date: ${formattedPickupDate}\n` +
+        `Booking Status: Waiting for Confirmation`;
+
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+    whatsappMessage
+  )}`;
+
+
 
   return (
     <div className="bg-slate-50 min-h-screen py-10">
@@ -173,7 +214,7 @@ export default async function BookingStatusPage({
               </p>
 
               {/* Quick Key Summary Chips */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs mb-3">
                 <div className="bg-white/10 rounded-xl p-2.5 backdrop-blur-xs">
                   <span className="text-[10px] text-emerald-200 block">Customer</span>
                   <span className="font-bold truncate block">{booking.customerName}</span>
@@ -191,8 +232,25 @@ export default async function BookingStatusPage({
                   <span className="font-bold block">₹{remainingBalanceNum}</span>
                 </div>
               </div>
+
+              {/* Direct WhatsApp Confirmation Button */}
+              <div className="pt-3 border-t border-emerald-500/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs text-emerald-100">
+                  Receive instant coordinator updates on WhatsApp:
+                </span>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-800 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>Share Confirmation on WhatsApp</span>
+                </a>
+              </div>
             </div>
           )}
+
 
           {/* Pending Notice */}
           {booking.status === 'PENDING' && (
@@ -251,12 +309,14 @@ export default async function BookingStatusPage({
             balanceAmount={remainingBalanceNum}
             isAdvancePaid={isAdvancePaid}
             hasFailedPayment={hasFailedPayment}
+            whatsappUrl={whatsappUrl}
             paidTransactionRef={
               booking.payments.find(
                 (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
               )?.transactionRef
             }
           />
+
 
           {/* Trip Details Grid */}
           <div>
@@ -384,9 +444,7 @@ export default async function BookingStatusPage({
             <span className="text-slate-500">Have questions regarding this trip?</span>
             <div className="flex items-center gap-3">
               <a
-                href={`https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                  `Hello, I am checking status of booking reference: ${booking.bookingRef}.`
-                )}`}
+                href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl transition-colors"
@@ -395,6 +453,7 @@ export default async function BookingStatusPage({
                 <span>WhatsApp Coordinator</span>
               </a>
               <a
+
                 href={`tel:${companyConfig.phone}`}
                 className="inline-flex items-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2 rounded-xl transition-colors"
               >

@@ -27,6 +27,7 @@ interface AdvancePaymentBoxProps {
   isAdvancePaid: boolean;
   paidTransactionRef?: string | null;
   hasFailedPayment?: boolean;
+  whatsappUrl?: string;
 }
 
 export default function AdvancePaymentBox({
@@ -42,6 +43,7 @@ export default function AdvancePaymentBox({
   isAdvancePaid,
   paidTransactionRef,
   hasFailedPayment = false,
+  whatsappUrl,
 }: AdvancePaymentBoxProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -125,10 +127,24 @@ export default function AdvancePaymentBox({
             <span className="text-emerald-900 font-bold">Remaining Balance (Pay on Trip):</span>
             <strong className="text-slate-900 font-bold">₹{remainingBalance}</strong>
           </div>
+
+          {whatsappUrl && (
+            <div className="pt-3 border-t border-emerald-200/80">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-colors shadow-xs"
+              >
+                <span>Share Confirmation on WhatsApp</span>
+              </a>
+            </div>
+          )}
         </div>
       </div>
     );
   }
+
 
 
   // 3. If Booking is CONFIRMED but advance amount is zero/not yet set
