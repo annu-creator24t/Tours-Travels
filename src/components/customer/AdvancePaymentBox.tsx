@@ -79,36 +79,54 @@ export default function AdvancePaymentBox({
   // 2. If Advance is already PAID
   if (isAdvancePaid) {
     return (
-      <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-5 text-xs text-emerald-900">
+      <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-5 text-xs text-emerald-900 shadow-sm">
         <div className="flex items-center justify-between pb-3 border-b border-emerald-200/70 mb-3">
           <div className="flex items-center gap-2 font-bold text-emerald-800 text-sm">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <span>Advance Payment Received</span>
+            <span>Advance Payment Verified</span>
           </div>
-          <span className="bg-emerald-600 text-white font-bold px-2.5 py-0.5 rounded-full text-[10px]">
-            PAID
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5 rounded text-[10px] border border-emerald-300">
+              Booking Confirmed
+            </span>
+            <span className="bg-emerald-600 text-white font-bold px-2.5 py-0.5 rounded-full text-[10px]">
+              PAID
+            </span>
+          </div>
         </div>
 
-        <div className="space-y-1.5 text-xs">
+        <div className="space-y-2 text-xs">
           <div className="flex justify-between">
-            <span className="text-emerald-700">Advance Paid:</span>
-            <strong className="text-emerald-950">₹{advanceNum}</strong>
+            <span className="text-emerald-800">Payment Status:</span>
+            <strong className="text-emerald-900 font-bold">PAID (Advance Verified)</strong>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-emerald-800">Booking Status:</span>
+            <strong className="text-emerald-900 font-semibold">{status}</strong>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-emerald-800">Total Trip Price:</span>
+            <span className="font-semibold text-slate-800">₹{finalPriceNum}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-emerald-800">Amount Paid (Advance):</span>
+            <strong className="text-emerald-950 font-extrabold text-sm">₹{advanceNum}</strong>
           </div>
           {paidTransactionRef && (
-            <div className="flex justify-between">
-              <span className="text-emerald-700">Transaction ID:</span>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-emerald-700">Payment Reference / Txn ID:</span>
               <span className="font-mono text-emerald-900">{paidTransactionRef}</span>
             </div>
           )}
-          <div className="flex justify-between pt-1 border-t border-emerald-200/60 font-bold">
-            <span className="text-emerald-800">Remaining Balance on Pickup:</span>
-            <span className="text-slate-900">₹{remainingBalance}</span>
+          <div className="flex justify-between pt-2 border-t border-emerald-200/80 text-xs">
+            <span className="text-emerald-900 font-bold">Remaining Balance (Pay on Trip):</span>
+            <strong className="text-slate-900 font-bold">₹{remainingBalance}</strong>
           </div>
         </div>
       </div>
     );
   }
+
 
   // 3. If Booking is CONFIRMED but advance amount is zero/not yet set
   if (advanceNum <= 0) {

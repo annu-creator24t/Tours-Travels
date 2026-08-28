@@ -313,8 +313,10 @@ export class PaymentService {
           where: { id: payment.bookingId },
           data: {
             balanceAmount: newBalance,
+            status: 'CONFIRMED',
           },
         });
+
 
         return {
           received: true,
