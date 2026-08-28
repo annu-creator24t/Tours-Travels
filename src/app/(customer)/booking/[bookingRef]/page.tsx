@@ -10,11 +10,14 @@ import {
   MessageCircle,
   PhoneCall,
   Sparkles,
+  FileText,
+  Download,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { companyConfig } from '@/lib/company.config';
 import AdvancePaymentBox from '@/components/customer/AdvancePaymentBox';
 import BookingTimeline from '@/components/customer/BookingTimeline';
+
 
 export const revalidate = 0;
 
@@ -175,7 +178,7 @@ export default async function BookingStatusPage({
               </h1>
             </div>
 
-            <div>
+            <div className="flex flex-wrap items-center gap-2">
               {booking.status === 'PENDING' && (
                 <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-800 border border-amber-200 font-bold px-3.5 py-1.5 rounded-full text-xs">
                   <Clock className="w-4 h-4 text-amber-600" />
@@ -196,6 +199,16 @@ export default async function BookingStatusPage({
               )}
               {booking.status === 'REJECTED' && (
                 <Badge variant="danger">Request Declined</Badge>
+              )}
+
+              {(booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') && (
+                <Link
+                  href={`/booking/${booking.bookingRef}/receipt`}
+                  className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold px-3.5 py-1.5 rounded-full text-xs transition-colors shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download Receipt</span>
+                </Link>
               )}
             </div>
           </div>
@@ -233,23 +246,33 @@ export default async function BookingStatusPage({
                 </div>
               </div>
 
-              {/* Direct WhatsApp Confirmation Button */}
+              {/* Action Buttons: WhatsApp and Download Receipt */}
               <div className="pt-3 border-t border-emerald-500/50 flex flex-col sm:flex-row items-center justify-between gap-3">
                 <span className="text-xs text-emerald-100">
-                  Receive instant coordinator updates on WhatsApp:
+                  Manage & share your booking documentation:
                 </span>
-                <a
-                  href={whatsappUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-800 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4 text-emerald-600" />
-                  <span>Share Confirmation on WhatsApp</span>
-                </a>
+                <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                  <Link
+                    href={`/booking/${booking.bookingRef}/receipt`}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-white/20 hover:bg-white/30 text-white border border-white/30 font-bold px-3.5 py-2 rounded-xl text-xs backdrop-blur-xs transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Receipt</span>
+                  </Link>
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-800 font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition-colors"
+                  >
+                    <MessageCircle className="w-4 h-4 text-emerald-600" />
+                    <span>Share on WhatsApp</span>
+                  </a>
+                </div>
               </div>
             </div>
           )}
+
 
 
           {/* Pending Notice */}
