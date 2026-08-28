@@ -2,7 +2,7 @@ import React from 'react';
 import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 
 export const metadata = {
-  title: 'Contact Us — Tours & Travels',
+  title: 'Contact Us — Jay Maa Sheetala Tours & Travel',
   description: 'Reach out to us for vehicle bookings, custom tour quotes, and fleet inquiries.',
 };
 

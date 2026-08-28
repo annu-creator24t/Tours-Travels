@@ -4,9 +4,9 @@ import Footer from '@/components/customer/Footer';
 import WhatsAppFloatingBtn from '@/components/customer/WhatsAppFloatingBtn';
 
 export const metadata = {
-  title: 'Tours & Travels — Reliable Fleet & Outstation Car Rental',
+  title: 'Jay Maa Sheetala Tours & Travel — Outstation Car Rental & Tours',
   description:
-    'Book clean, verified vehicles for outstation trips, local tours, and airport transfers with transparent pricing and top ratings.',
+    'Book clean, verified vehicles for outstation trips, local tours, and airport transfers with Jay Maa Sheetala Tours & Travel.',
 };
 
 export default function CustomerLayout({

@@ -43,11 +43,11 @@ export const AdminSidebar: React.FC = () => {
             <Compass className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-sm font-bold text-white block leading-tight">
-              Tours & Travels
+            <span className="text-xs font-bold text-white block leading-tight">
+              Jay Maa Sheetala
             </span>
             <span className="text-[10px] text-blue-400 font-semibold tracking-wider uppercase">
-              Admin Console
+              Tours & Travel Admin
             </span>
           </div>
         </div>

@@ -1,6 +1,6 @@
-# Tours & Travels — Web Platform (V1)
+# Jay Maa Sheetala Tours & Travel — Web Platform (V1)
 
-A clean, modern, and high-trust Tours & Travels web application tailored for direct fleet discovery, customer inquiries, verified reviews, and admin booking management.
+A clean, modern, and high-trust Tours & Travels web application tailored for direct fleet discovery, customer inquiries, verified reviews, and admin booking management for Jay Maa Sheetala Tours & Travel.
 
 ---
 

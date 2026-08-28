@@ -2,7 +2,7 @@ import React from 'react';
 import { Calendar, User, Phone, MapPin, CheckCircle } from 'lucide-react';
 
 export const metadata = {
-  title: 'Book a Vehicle — Tours & Travels',
+  title: 'Book a Vehicle — Jay Maa Sheetala Tours & Travel',
   description: 'Submit an instant booking request for your outstation or local trip.',
 };
 

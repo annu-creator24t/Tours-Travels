@@ -3,7 +3,7 @@ import { Star, ShieldCheck } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 
 export const metadata = {
-  title: 'Customer Reviews & Justdial Ratings — Tours & Travels',
+  title: 'Customer Reviews & Justdial Ratings — Jay Maa Sheetala Tours & Travel',
   description: 'Read genuine reviews and ratings from our valued travelers.',
 };
 

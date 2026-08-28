@@ -12,7 +12,9 @@ export const Footer: React.FC = () => {
               <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
                 <Compass className="w-5 h-5" />
               </div>
-              <span className="text-lg font-bold text-white">Tours & Travels</span>
+              <span className="text-base font-bold text-white">
+                Jay Maa Sheetala Tours & Travel
+              </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Safe, dependable, and comfortable vehicle rentals for outstation
@@ -82,7 +84,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Tours & Travels. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Jay Maa Sheetala Tours & Travel. All rights reserved.</p>
           <div className="flex space-x-4 mt-3 sm:mt-0">
             <Link href="/admin/login" className="hover:text-slate-400">
               Admin Portal

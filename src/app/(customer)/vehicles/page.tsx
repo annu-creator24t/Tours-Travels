@@ -4,7 +4,7 @@ import { Car, Users, Briefcase, Snowflake, ArrowRight } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 
 export const metadata = {
-  title: 'Our Fleet — Tours & Travels',
+  title: 'Our Fleet — Jay Maa Sheetala Tours & Travel',
   description: 'Explore our fleet of sedans, SUVs, and luxury tempo travellers.',
 };
 

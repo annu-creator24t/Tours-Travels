@@ -13,10 +13,10 @@ export const Navbar: React.FC = () => {
             <Compass className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-lg font-bold text-slate-900 leading-none block">
-              Tours & Travels
+            <span className="text-base sm:text-lg font-bold text-slate-900 leading-tight block">
+              Jay Maa Sheetala Tours & Travel
             </span>
-            <span className="text-xs text-blue-600 font-semibold tracking-wider uppercase">
+            <span className="text-[10px] sm:text-xs text-blue-600 font-semibold tracking-wider uppercase">
               Premium Fleet
             </span>
           </div>

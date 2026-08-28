@@ -2,7 +2,7 @@ import React from 'react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 
 export const metadata = {
-  title: 'Admin Console — Tours & Travels',
+  title: 'Admin Console — Jay Maa Sheetala Tours & Travel',
   description: 'Manage fleet, drivers, bookings, and customer reviews.',
 };
 
