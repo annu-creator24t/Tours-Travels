@@ -186,6 +186,10 @@ export default async function BookingStatusPage({
           <AdvancePaymentBox
             bookingRef={booking.bookingRef}
             status={booking.status}
+            vehicleName={booking.vehicle ? `${booking.vehicle.brand} ${booking.vehicle.name}` : null}
+            pickupLocation={booking.pickupLocation}
+            dropLocation={booking.dropLocation}
+            pickupDatetime={booking.pickupDatetime}
             finalPrice={booking.finalPrice ? Number(booking.finalPrice) : Number(booking.estimatedPrice)}
             advanceAmount={booking.advanceAmount ? Number(booking.advanceAmount) : 0}
             balanceAmount={booking.balanceAmount ? Number(booking.balanceAmount) : null}
@@ -198,6 +202,7 @@ export default async function BookingStatusPage({
               )?.transactionRef
             }
           />
+
 
           {/* Trip Details Grid */}
           <div>
