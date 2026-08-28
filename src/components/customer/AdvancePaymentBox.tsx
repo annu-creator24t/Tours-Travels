@@ -111,8 +111,25 @@ export default function AdvancePaymentBox({
     );
   }
 
-  // 3. If Booking is CONFIRMED and requires Advance Payment
+  // 3. If Booking is CONFIRMED but advance amount is zero/not yet set
+  if (advanceNum <= 0) {
+    return (
+      <div className="bg-blue-50/80 border border-blue-200/80 rounded-2xl p-5 text-xs text-blue-900 flex items-start gap-3">
+        <CreditCard className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold block mb-1">Advance Payment Status</span>
+          <span>
+            Your booking is confirmed! Our dispatch team is currently finalizing your advance quote.
+            Once set, you will be able to complete your advance payment here.
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // 4. If Booking is CONFIRMED and requires Advance Payment
   const handleInitiatePayment = async () => {
+
     setIsLoading(true);
     setErrorMessage(null);
     try {
