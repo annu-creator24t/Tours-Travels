@@ -1,9 +1,36 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
+import { companyConfig } from '@/lib/company.config';
 
-export const metadata = {
-  title: 'Contact Us — Jay Maa Sheetala Tours & Travel',
-  description: 'Reach out to us for vehicle bookings, custom tour quotes, and fleet inquiries.',
+export const metadata: Metadata = {
+  title: `Contact Us — ${companyConfig.name}`,
+  description: `Reach out to ${companyConfig.name} for outstation cab bookings, pilgrimage tour quotes, and fleet inquiries. 24/7 customer support.`,
+  alternates: {
+    canonical: '/contact',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    url: '/contact',
+    siteName: companyConfig.name,
+    title: `Contact Us — ${companyConfig.name}`,
+    description: `Reach out to ${companyConfig.name} for outstation cab bookings, pilgrimage tour quotes, and fleet inquiries. 24/7 customer support.`,
+    images: [
+      {
+        url: '/images/hero-fleet.jpg',
+        width: 1200,
+        height: 630,
+        alt: `${companyConfig.name} Contact Support`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Contact Us — ${companyConfig.name}`,
+    description: `Reach out to ${companyConfig.name} for outstation cab bookings, pilgrimage tour quotes, and fleet inquiries.`,
+    images: ['/images/hero-fleet.jpg'],
+  },
 };
 
 export default function ContactPage() {

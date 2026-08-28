@@ -2,12 +2,37 @@ import React from 'react';
 import prisma from '@/lib/db';
 import { Star, ShieldCheck, MessageCircle, Plus } from 'lucide-react';
 import ReviewSourceBadge from '@/components/customer/ReviewSourceBadge';
+import type { Metadata } from 'next';
 import { companyConfig } from '@/lib/company.config';
 
-export const metadata = {
-  title: 'Customer Reviews & Justdial Ratings — Jay Maa Sheetala Tours & Travel',
-  description:
-    'Read real traveler reviews and verified Justdial ratings for Jay Maa Sheetala Tours & Travel outstation and fleet rental services.',
+export const metadata: Metadata = {
+  title: `Customer Reviews & Justdial Ratings — ${companyConfig.name}`,
+  description: `Read real traveler reviews and verified Justdial ratings for ${companyConfig.name} outstation and fleet rental services.`,
+  alternates: {
+    canonical: '/reviews',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    url: '/reviews',
+    siteName: companyConfig.name,
+    title: `Customer Reviews & Justdial Ratings — ${companyConfig.name}`,
+    description: `Read real traveler reviews and verified Justdial ratings for ${companyConfig.name} outstation and fleet rental services.`,
+    images: [
+      {
+        url: '/images/hero-fleet.jpg',
+        width: 1200,
+        height: 630,
+        alt: `${companyConfig.name} Customer Reviews`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Customer Reviews & Justdial Ratings — ${companyConfig.name}`,
+    description: `Read real traveler reviews and verified Justdial ratings for ${companyConfig.name} outstation and fleet rental services.`,
+    images: ['/images/hero-fleet.jpg'],
+  },
 };
 
 export const revalidate = 0;

@@ -50,14 +50,59 @@ async function getVehicleDetails(slug: string) {
   }
 }
 
-export async function generateMetadata({ params }: VehicleDetailsProps) {
+import type { Metadata } from 'next';
+
+export async function generateMetadata({
+  params,
+}: VehicleDetailsProps): Promise<Metadata> {
   const vehicle = await getVehicleDetails(params.slug);
-  if (!vehicle) {
-    return { title: 'Vehicle Not Found — Jay Maa Sheetala Tours & Travel' };
+  if (!vehicle || vehicle.status === 'INACTIVE') {
+    return {
+      title: `Vehicle Not Found — ${companyConfig.name}`,
+      description: `The requested vehicle is not available in our fleet catalog.`,
+    };
   }
+
+  const primaryImage =
+    vehicle.images.find((img) => img.isPrimary)?.imageUrl ||
+    vehicle.images[0]?.imageUrl ||
+    '/images/hero-fleet.jpg';
+
+  const title = `${vehicle.name} (${vehicle.brand}) — ${companyConfig.name}`;
+  const description = `Book ${vehicle.name} (${vehicle.vehicleType}, ${vehicle.seatingCapacity} seats, ${
+    vehicle.hasAc ? 'AC' : 'Non-AC'
+  }) for outstation trips, family tours, and airport transfers. Starting at ₹${Number(
+    vehicle.perKmRate
+  )}/km with verified professional chauffeurs.`;
+
   return {
-    title: `${vehicle.name} (${vehicle.brand}) — Jay Maa Sheetala Tours & Travel`,
-    description: `Book ${vehicle.name} for outstation trips, family tours, and airport transfers. ₹${Number(vehicle.perKmRate)}/km with verified professional drivers.`,
+    title,
+    description,
+    alternates: {
+      canonical: `/vehicles/${vehicle.slug}`,
+    },
+    openGraph: {
+      type: 'website',
+      locale: 'en_IN',
+      url: `/vehicles/${vehicle.slug}`,
+      siteName: companyConfig.name,
+      title: `${vehicle.name} (${vehicle.brand}) Rental — ${companyConfig.name}`,
+      description,
+      images: [
+        {
+          url: primaryImage,
+          width: 1200,
+          height: 630,
+          alt: `${vehicle.name} (${vehicle.brand})`,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [primaryImage],
+    },
   };
 }
 

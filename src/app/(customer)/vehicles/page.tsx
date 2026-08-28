@@ -13,11 +13,40 @@ import {
   Check,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
+import type { Metadata } from 'next';
+import { companyConfig } from '@/lib/company.config';
 
-export const metadata = {
-  title: 'Our Fleet — Jay Maa Sheetala Tours & Travel',
+export const metadata: Metadata = {
+  title: `Our Fleet — ${companyConfig.name}`,
   description:
     'Explore our well-maintained fleet of sedans, SUVs, and luxury tempo travellers. Transparent per-km rates with verified drivers.',
+  alternates: {
+    canonical: '/vehicles',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_IN',
+    url: '/vehicles',
+    siteName: companyConfig.name,
+    title: `Our Fleet — ${companyConfig.name}`,
+    description:
+      'Explore our well-maintained fleet of sedans, SUVs, and luxury tempo travellers. Transparent per-km rates with verified drivers.',
+    images: [
+      {
+        url: '/images/hero-fleet.jpg',
+        width: 1200,
+        height: 630,
+        alt: `${companyConfig.name} Fleet Catalog`,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Our Fleet — ${companyConfig.name}`,
+    description:
+      'Explore our well-maintained fleet of sedans, SUVs, and luxury tempo travellers. Transparent per-km rates with verified drivers.',
+    images: ['/images/hero-fleet.jpg'],
+  },
 };
 
 export const revalidate = 0; // Dynamic data for live fleet availability
