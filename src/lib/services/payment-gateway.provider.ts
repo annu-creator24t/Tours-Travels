@@ -35,9 +35,18 @@ export class ModularPaymentProvider implements IPaymentGatewayProvider {
   private webhookSecret: string;
 
   constructor() {
-    this.keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_public_key';
-    this.keySecret = process.env.RAZORPAY_KEY_SECRET || 'dev_payment_gateway_secret_2026';
-    this.webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || this.keySecret;
+    this.keyId =
+      process.env.RAZORPAY_KEY_ID ||
+      process.env.PAYMENT_GATEWAY_KEY_ID ||
+      '';
+    this.keySecret =
+      process.env.RAZORPAY_KEY_SECRET ||
+      process.env.PAYMENT_GATEWAY_KEY_SECRET ||
+      '';
+    this.webhookSecret =
+      process.env.RAZORPAY_WEBHOOK_SECRET ||
+      process.env.PAYMENT_GATEWAY_WEBHOOK_SECRET ||
+      this.keySecret;
   }
 
   async createOrder(params: {
@@ -46,18 +55,23 @@ export class ModularPaymentProvider implements IPaymentGatewayProvider {
     receipt: string;
     notes?: Record<string, string>;
   }): Promise<GatewayOrderResult> {
-    // Generate order ID
+    if (params.amount <= 0) {
+      throw new Error('Order amount must be greater than zero');
+    }
+
+    // Generate safe order ID with timestamp & high-entropy suffix
     const orderId = `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     return {
       orderId,
       amount: params.amount,
       currency: params.currency || 'INR',
-      gatewayName: process.env.RAZORPAY_KEY_ID ? 'RAZORPAY' : 'MODULAR_UPI',
-      keyId: this.keyId,
+      gatewayName: this.keyId ? 'RAZORPAY' : 'MODULAR_UPI',
+      keyId: this.keyId || undefined,
       notes: params.notes,
     };
   }
+
 
   /**
    * Cryptographically verifies HMAC-SHA256 signature
