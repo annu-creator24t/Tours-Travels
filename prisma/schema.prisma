@@ -1,4 +1,5 @@
-// Tours & Travels — V1 Production Database Schema
+// Jay Maa Sheetala Tours & Travel — V1 Production Database Schema
+// Fully relational PostgreSQL schema for fleet, drivers, bookings, payments, and reviews.
 
 generator client {
   provider = "prisma-client-js"
