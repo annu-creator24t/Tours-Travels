@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   Loader2,
   Search,
-  Filter,
   User,
   Phone,
   Car,
@@ -21,15 +20,22 @@ import {
   UserCheck,
   Check,
   Ban,
+  Mail,
+  ShieldCheck,
+  MessageCircle,
+  PhoneCall,
+  ExternalLink,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { BookingStatus, TripType } from '@prisma/client';
+import { companyConfig } from '@/lib/company.config';
 
 interface VehicleOption {
   id: string;
   name: string;
   brand: string;
   vehicleType: string;
+  seatingCapacity?: number;
   perKmRate: string | number;
   baseDayRate: string | number;
 }
@@ -40,6 +46,16 @@ interface DriverOption {
   phone: string;
   status: string;
   experienceYears: number;
+}
+
+interface PaymentRecord {
+  id: string;
+  transactionRef?: string | null;
+  amount: string | number;
+  paymentType: string;
+  status: string;
+  gatewayName: string;
+  createdAt: string;
 }
 
 interface BookingRecord {
@@ -66,6 +82,7 @@ interface BookingRecord {
   createdAt: string;
   vehicle?: VehicleOption | null;
   driver?: DriverOption | null;
+  payments?: PaymentRecord[];
 }
 
 export default function AdminBookingsPage() {
@@ -140,14 +157,15 @@ export default function AdminBookingsPage() {
     });
   };
 
-  const handleModalSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleModalSubmit = async (e?: React.FormEvent, overrideStatus?: BookingStatus) => {
+    if (e) e.preventDefault();
     if (!selectedBooking) return;
 
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
+    const targetStatus = overrideStatus || modalFormData.status;
     const finalPriceNum = modalFormData.finalPrice ? parseFloat(modalFormData.finalPrice) : null;
     const advanceAmountNum = modalFormData.advanceAmount ? parseFloat(modalFormData.advanceAmount) : null;
     const calculatedBalance =
@@ -160,7 +178,7 @@ export default function AdminBookingsPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          status: modalFormData.status,
+          status: targetStatus,
           vehicleId: modalFormData.vehicleId || null,
           driverId: modalFormData.driverId || null,
           finalPrice: finalPriceNum,
@@ -176,7 +194,7 @@ export default function AdminBookingsPage() {
         throw new Error(data.error || 'Failed to update booking status');
       }
 
-      setSuccessMessage(`Booking #${selectedBooking.bookingRef} updated to ${modalFormData.status}`);
+      setSuccessMessage(`Booking #${selectedBooking.bookingRef} successfully updated to ${targetStatus}`);
       setSelectedBooking(null);
       loadData();
     } catch (err: unknown) {
@@ -192,6 +210,7 @@ export default function AdminBookingsPage() {
       b.bookingRef.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.customerPhone.includes(searchTerm) ||
+      (b.customerEmail && b.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
       b.pickupLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
       b.dropLocation.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesSearch;
@@ -207,10 +226,10 @@ export default function AdminBookingsPage() {
       <main className="p-6 space-y-6">
         {/* Top Notifications */}
         {successMessage && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-xs flex items-center justify-between">
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-3 rounded-xl text-xs flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span>{successMessage}</span>
+              <span className="font-medium">{successMessage}</span>
             </div>
             <button onClick={() => setSuccessMessage(null)} className="text-emerald-600 hover:text-emerald-800">
               <X className="w-4 h-4" />
@@ -219,10 +238,10 @@ export default function AdminBookingsPage() {
         )}
 
         {errorMessage && (
-          <div className="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-xs flex items-center justify-between">
+          <div className="bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-xs flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              <span>{errorMessage}</span>
+              <span className="font-medium">{errorMessage}</span>
             </div>
             <button onClick={() => setErrorMessage(null)} className="text-rose-600 hover:text-rose-800">
               <X className="w-4 h-4" />
@@ -250,14 +269,14 @@ export default function AdminBookingsPage() {
           </div>
 
           {/* Search Input */}
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-72">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search ref, name, phone, city..."
-              className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              placeholder="Search ref, customer, phone, route..."
+              className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
             />
           </div>
         </div>
@@ -266,7 +285,7 @@ export default function AdminBookingsPage() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900">
-              Trip Requests ({filteredBookings.length})
+              Trip Inquiries & Bookings ({filteredBookings.length})
             </h2>
           </div>
 
@@ -285,113 +304,137 @@ export default function AdminBookingsPage() {
                 <thead className="bg-slate-50 text-slate-700 font-semibold border-b border-slate-200 uppercase tracking-wider text-[11px]">
                   <tr>
                     <th className="py-3.5 px-4">Booking Ref</th>
-                    <th className="py-3.5 px-4">Customer</th>
-                    <th className="py-3.5 px-4">Route & Schedule</th>
+                    <th className="py-3.5 px-4">Customer Details</th>
+                    <th className="py-3.5 px-4">Route & Dates</th>
                     <th className="py-3.5 px-4">Allocated Fleet & Driver</th>
-                    <th className="py-3.5 px-4">Pricing</th>
+                    <th className="py-3.5 px-4">Quote & Payment</th>
                     <th className="py-3.5 px-4">Status</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredBookings.map((b) => (
-                    <tr key={b.id} className="hover:bg-slate-50/70 transition-colors">
-                      <td className="py-4 px-4 font-bold text-blue-700">
-                        <span>{b.bookingRef}</span>
-                        <span className="text-[10px] text-slate-400 block font-normal">
-                          {b.tripType} · {b.passengerCount} Pax
-                        </span>
-                      </td>
+                  {filteredBookings.map((b) => {
+                    const isAdvancePaid = b.payments?.some(
+                      (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
+                    );
 
-                      <td className="py-4 px-4">
-                        <span className="font-bold text-slate-900 block">{b.customerName}</span>
-                        <a
-                          href={`tel:${b.customerPhone}`}
-                          className="text-slate-500 hover:text-blue-600 font-medium"
-                        >
-                          {b.customerPhone}
-                        </a>
-                      </td>
+                    return (
+                      <tr key={b.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="py-4 px-4 font-bold text-blue-700">
+                          <span>{b.bookingRef}</span>
+                          <span className="text-[10px] text-slate-400 block font-normal">
+                            {b.tripType} · {b.passengerCount} Pax
+                          </span>
+                        </td>
 
-                      <td className="py-4 px-4">
-                        <div className="font-semibold text-slate-800">
-                          {b.pickupLocation} → {b.dropLocation}
-                        </div>
-                        <span className="text-[11px] text-slate-500 block">
-                          Pickup:{' '}
-                          {new Date(b.pickupDatetime).toLocaleString('en-IN', {
-                            dateStyle: 'short',
-                            timeStyle: 'short',
-                          })}
-                        </span>
-                      </td>
-
-                      <td className="py-4 px-4">
-                        <div>
-                          {b.vehicle ? (
-                            <span className="font-bold text-slate-900 block">
-                              {b.vehicle.name}
-                            </span>
-                          ) : (
-                            <span className="text-amber-600 font-medium italic block">
-                              No vehicle assigned
+                        <td className="py-4 px-4">
+                          <span className="font-bold text-slate-900 block">{b.customerName}</span>
+                          <a
+                            href={`tel:${b.customerPhone}`}
+                            className="text-slate-600 hover:text-blue-600 font-medium block"
+                          >
+                            {b.customerPhone}
+                          </a>
+                          {b.customerEmail && (
+                            <span className="text-[10px] text-slate-400 block truncate max-w-[150px]">
+                              {b.customerEmail}
                             </span>
                           )}
+                        </td>
 
-                          {b.driver ? (
-                            <span className="text-[11px] text-slate-600 block">
-                              Driver: {b.driver.name} ({b.driver.phone})
-                            </span>
-                          ) : (
+                        <td className="py-4 px-4">
+                          <div className="font-semibold text-slate-800">
+                            {b.pickupLocation} → {b.dropLocation}
+                          </div>
+                          <span className="text-[11px] text-slate-500 block">
+                            Pickup: {new Date(b.pickupDatetime).toLocaleString('en-IN', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })}
+                          </span>
+                          {b.returnDatetime && (
                             <span className="text-[10px] text-slate-400 block">
-                              Driver: Unassigned
+                              Return: {new Date(b.returnDatetime).toLocaleString('en-IN', {
+                                dateStyle: 'short',
+                                timeStyle: 'short',
+                              })}
                             </span>
                           )}
-                        </div>
-                      </td>
+                        </td>
 
-                      <td className="py-4 px-4">
-                        <div className="font-bold text-slate-900">
-                          ₹{b.finalPrice ? Number(b.finalPrice) : Number(b.estimatedPrice)}
-                        </div>
-                        {b.advanceAmount && Number(b.advanceAmount) > 0 ? (
-                          <span className="text-[10px] text-emerald-600 font-semibold block">
-                            Advance: ₹{Number(b.advanceAmount)}
-                          </span>
-                        ) : null}
-                      </td>
+                        <td className="py-4 px-4">
+                          <div>
+                            {b.vehicle ? (
+                              <span className="font-bold text-slate-900 block">
+                                {b.vehicle.name} ({b.vehicle.vehicleType})
+                              </span>
+                            ) : (
+                              <span className="text-amber-600 font-medium italic block">
+                                No vehicle assigned
+                              </span>
+                            )}
 
-                      <td className="py-4 px-4">
-                        {b.status === 'PENDING' && (
-                          <Badge variant="warning">PENDING</Badge>
-                        )}
-                        {b.status === 'CONFIRMED' && (
-                          <Badge variant="success">CONFIRMED</Badge>
-                        )}
-                        {b.status === 'COMPLETED' && (
-                          <span className="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">
-                            COMPLETED
-                          </span>
-                        )}
-                        {b.status === 'CANCELLED' && (
-                          <Badge variant="danger">CANCELLED</Badge>
-                        )}
-                        {b.status === 'REJECTED' && (
-                          <Badge variant="danger">REJECTED</Badge>
-                        )}
-                      </td>
+                            {b.driver ? (
+                              <span className="text-[11px] text-slate-600 block">
+                                Driver: {b.driver.name} ({b.driver.phone})
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 block">
+                                Driver: Unassigned
+                              </span>
+                            )}
+                          </div>
+                        </td>
 
-                      <td className="py-4 px-4 text-right">
-                        <button
-                          onClick={() => handleOpenManageModal(b)}
-                          className="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-colors"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                          <span>Manage</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="py-4 px-4">
+                          <div className="font-bold text-slate-900">
+                            ₹{b.finalPrice ? Number(b.finalPrice) : Number(b.estimatedPrice)}
+                          </div>
+                          {isAdvancePaid ? (
+                            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 py-0.5 rounded inline-block">
+                              Advance Paid (₹{Number(b.advanceAmount)})
+                            </span>
+                          ) : b.advanceAmount && Number(b.advanceAmount) > 0 ? (
+                            <span className="text-[10px] text-amber-700 block font-medium">
+                              Advance Due: ₹{Number(b.advanceAmount)}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 block">Payment: Pending</span>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-4">
+                          {b.status === 'PENDING' && (
+                            <Badge variant="warning">PENDING</Badge>
+                          )}
+                          {b.status === 'CONFIRMED' && (
+                            <Badge variant="success">CONFIRMED</Badge>
+                          )}
+                          {b.status === 'COMPLETED' && (
+                            <span className="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px]">
+                              COMPLETED
+                            </span>
+                          )}
+                          {b.status === 'CANCELLED' && (
+                            <Badge variant="danger">CANCELLED</Badge>
+                          )}
+                          {b.status === 'REJECTED' && (
+                            <Badge variant="danger">REJECTED</Badge>
+                          )}
+                        </td>
+
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={() => handleOpenManageModal(b)}
+                            className="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-colors"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span>Manage</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -421,36 +464,63 @@ export default function AdminBookingsPage() {
             </div>
 
             {/* Traveler & Trip Overview Box */}
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs mb-5 space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Customer:</span>
-                <strong className="text-slate-900">
-                  {selectedBooking.customerName} ({selectedBooking.customerPhone})
-                </strong>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs mb-5 space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <span className="text-slate-400 block mb-0.5">Primary Passenger:</span>
+                  <strong className="text-slate-900">{selectedBooking.customerName}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block mb-0.5">Contact Phone:</span>
+                  <a href={`tel:${selectedBooking.customerPhone}`} className="text-blue-600 font-bold hover:underline">
+                    {selectedBooking.customerPhone}
+                  </a>
+                </div>
+                {selectedBooking.customerEmail && (
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Email Address:</span>
+                    <strong className="text-slate-900">{selectedBooking.customerEmail}</strong>
+                  </div>
+                )}
+                <div>
+                  <span className="text-slate-400 block mb-0.5">Trip Type & Group:</span>
+                  <strong className="text-slate-900">{selectedBooking.tripType} · {selectedBooking.passengerCount} Passengers</strong>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-slate-400 block mb-0.5">Trip Route:</span>
+                  <strong className="text-slate-900">{selectedBooking.pickupLocation} → {selectedBooking.dropLocation}</strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block mb-0.5">Pickup Datetime:</span>
+                  <strong className="text-slate-900">
+                    {new Date(selectedBooking.pickupDatetime).toLocaleString('en-IN', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </strong>
+                </div>
+                {selectedBooking.returnDatetime && (
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Return Datetime:</span>
+                    <strong className="text-slate-900">
+                      {new Date(selectedBooking.returnDatetime).toLocaleString('en-IN', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })}
+                    </strong>
+                  </div>
+                )}
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Route:</span>
-                <strong className="text-slate-900">
-                  {selectedBooking.pickupLocation} → {selectedBooking.dropLocation}
-                </strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Pickup Date:</span>
-                <strong className="text-slate-900">
-                  {new Date(selectedBooking.pickupDatetime).toLocaleString('en-IN', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </strong>
-              </div>
+
               {selectedBooking.customerNotes && (
-                <div className="pt-1 text-slate-600 italic">
-                  &ldquo;{selectedBooking.customerNotes}&rdquo;
+                <div className="pt-2 border-t border-slate-200">
+                  <span className="text-slate-400 block mb-0.5">Traveler Special Notes:</span>
+                  <p className="text-slate-700 italic">{selectedBooking.customerNotes}</p>
                 </div>
               )}
             </div>
 
-            <form onSubmit={handleModalSubmit} className="space-y-4 text-xs">
+            <form onSubmit={(e) => handleModalSubmit(e)} className="space-y-4 text-xs">
               {/* Status Transition Selector */}
               <div>
                 <label className="block font-bold text-slate-800 mb-1.5">
@@ -465,7 +535,7 @@ export default function AdminBookingsPage() {
                         onClick={() => setModalFormData({ ...modalFormData, status: st })}
                         className={`py-2 px-2 rounded-lg text-center font-bold text-[11px] border transition-all ${
                           modalFormData.status === st
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm ring-2 ring-blue-600/20'
                             : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
                         }`}
                       >
@@ -487,7 +557,7 @@ export default function AdminBookingsPage() {
                     onChange={(e) =>
                       setModalFormData({ ...modalFormData, vehicleId: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-xs"
                   >
                     <option value="">-- No Vehicle Assigned --</option>
                     {vehicles.map((v) => (
@@ -507,7 +577,7 @@ export default function AdminBookingsPage() {
                     onChange={(e) =>
                       setModalFormData({ ...modalFormData, driverId: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-xs"
                   >
                     <option value="">-- Unassigned --</option>
                     {drivers.map((d) => (
@@ -532,7 +602,7 @@ export default function AdminBookingsPage() {
                       setModalFormData({ ...modalFormData, finalPrice: e.target.value })
                     }
                     placeholder="e.g. 5500"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-bold"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-bold text-xs"
                   />
                 </div>
 
@@ -550,7 +620,7 @@ export default function AdminBookingsPage() {
                       })
                     }
                     placeholder="e.g. 1000"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-bold"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white font-bold text-xs"
                   />
                 </div>
               </div>
@@ -567,7 +637,7 @@ export default function AdminBookingsPage() {
                     setModalFormData({ ...modalFormData, adminNotes: e.target.value })
                   }
                   placeholder="e.g. Spoke with client. Driver Rajesh assigned. 1000 advance received via UPI."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
                 />
               </div>
 

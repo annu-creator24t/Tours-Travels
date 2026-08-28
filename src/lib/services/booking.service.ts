@@ -121,6 +121,24 @@ export class BookingService {
 
       const vehicleId = input.vehicleId !== undefined ? input.vehicleId : booking.vehicleId;
 
+      // Validate vehicle and driver existence if specified
+      if (input.vehicleId) {
+        const vehicle = await tx.vehicle.findUnique({ where: { id: input.vehicleId } });
+        if (!vehicle) {
+          throw new Error('Assigned vehicle not found in inventory');
+        }
+        if (vehicle.status === 'INACTIVE') {
+          throw new Error(`Cannot assign inactive vehicle (${vehicle.name})`);
+        }
+      }
+
+      if (input.driverId) {
+        const driver = await tx.driver.findUnique({ where: { id: input.driverId } });
+        if (!driver) {
+          throw new Error('Assigned driver not found in records');
+        }
+      }
+
       // When transitioning to or maintaining CONFIRMED status with an assigned vehicle:
       if (input.status === BookingStatus.CONFIRMED && vehicleId) {
         const availability = await VehicleService.isVehicleAvailable(
@@ -137,6 +155,7 @@ export class BookingService {
           );
         }
       }
+
 
       return tx.booking.update({
         where: { id },
