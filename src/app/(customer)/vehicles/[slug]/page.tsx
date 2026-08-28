@@ -397,7 +397,7 @@ export default async function VehicleDetailPage({ params }: VehicleDetailsProps)
 
                 <a
                   href={`https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                    `Hello Jay Maa Sheetala Tours & Travel, I would like to inquire about booking ${vehicle.name}.`
+                    `Hello ${companyConfig.name}, I would like to inquire about booking ${vehicle.name}.`
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"

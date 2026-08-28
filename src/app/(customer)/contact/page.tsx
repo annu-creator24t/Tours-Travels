@@ -54,10 +54,10 @@ export default function ContactPage() {
           <h3 className="font-bold text-slate-900 mb-1">Phone Support</h3>
           <p className="text-xs text-slate-500 mb-3">Instant booking assistance</p>
           <a
-            href="tel:+919876543210"
+            href={`tel:${companyConfig.phone}`}
             className="text-sm font-semibold text-blue-600 hover:underline"
           >
-            +91 98765 43210
+            {companyConfig.phoneDisplay}
           </a>
         </div>
 
@@ -68,12 +68,14 @@ export default function ContactPage() {
           <h3 className="font-bold text-slate-900 mb-1">WhatsApp Chat</h3>
           <p className="text-xs text-slate-500 mb-3">Quick response for quotes</p>
           <a
-            href="https://wa.me/919876543210"
+            href={`https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+              `Hello ${companyConfig.name}, I would like to inquire about booking a trip.`
+            )}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-semibold text-emerald-600 hover:underline"
           >
-            Chat with Us
+            {companyConfig.whatsappDisplay}
           </a>
         </div>
 
@@ -84,10 +86,10 @@ export default function ContactPage() {
           <h3 className="font-bold text-slate-900 mb-1">Email Inquiries</h3>
           <p className="text-xs text-slate-500 mb-3">Corporate & bulk bookings</p>
           <a
-            href="mailto:contact@tourstravels.com"
-            className="text-sm font-semibold text-indigo-600 hover:underline"
+            href={`mailto:${companyConfig.email}`}
+            className="text-sm font-semibold text-indigo-600 hover:underline break-all"
           >
-            contact@tourstravels.com
+            {companyConfig.email}
           </a>
         </div>
       </div>

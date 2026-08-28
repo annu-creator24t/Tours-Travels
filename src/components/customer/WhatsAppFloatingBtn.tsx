@@ -2,10 +2,12 @@
 
 import React from 'react';
 import { MessageCircle } from 'lucide-react';
+import { companyConfig } from '@/lib/company.config';
 
 export const WhatsAppFloatingBtn: React.FC = () => {
-  const phone = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP || '919876543210';
-  const whatsappUrl = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=Hello%2C%20I%20would%20like%20to%20inquire%20about%20booking%20a%20vehicle.`;
+  const whatsappUrl = `https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+    `Hello ${companyConfig.name}, I would like to inquire about booking a vehicle.`
+  )}`;
 
   return (
     <a
