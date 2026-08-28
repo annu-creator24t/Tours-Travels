@@ -17,6 +17,10 @@ import {
   Snowflake,
   Fuel,
   Star,
+  Image as ImageIcon,
+  ArrowUp,
+  ArrowDown,
+  Check,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { VehicleStatus } from '@prisma/client';
@@ -86,10 +90,20 @@ export default function AdminVehiclesPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Modal State
+  // Edit / Add Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [formData, setFormData] = useState<VehicleFormData>(initialFormData);
+
+  // Image Gallery Modal State
+  const [galleryVehicle, setGalleryVehicle] = useState<Vehicle | null>(null);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<VehicleImage[]>([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [newImageIsPrimary, setNewImageIsPrimary] = useState(false);
+  const [isImageSubmitting, setIsImageSubmitting] = useState(false);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
+  const [gallerySuccess, setGallerySuccess] = useState<string | null>(null);
 
   const fetchVehicles = useCallback(async () => {
     setIsLoading(true);
@@ -99,6 +113,14 @@ export default function AdminVehiclesPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         setVehicles(data.data || []);
+        // Update gallery images if gallery modal is open
+        if (galleryVehicle) {
+          const updated = (data.data || []).find((v: Vehicle) => v.id === galleryVehicle.id);
+          if (updated) {
+            setGalleryVehicle(updated);
+            setGalleryImages(updated.images || []);
+          }
+        }
       } else {
         setErrorMessage(data.error || 'Failed to load vehicles');
       }
@@ -107,7 +129,7 @@ export default function AdminVehiclesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [galleryVehicle]);
 
   useEffect(() => {
     fetchVehicles();
@@ -121,7 +143,10 @@ export default function AdminVehiclesPage() {
 
   const handleOpenEditModal = (vehicle: Vehicle) => {
     setEditingVehicleId(vehicle.id);
-    const primaryImg = vehicle.images?.find((img) => img.isPrimary)?.imageUrl || vehicle.images?.[0]?.imageUrl || '';
+    const primaryImg =
+      vehicle.images?.find((img) => img.isPrimary)?.imageUrl ||
+      vehicle.images?.[0]?.imageUrl ||
+      '';
     setFormData({
       name: vehicle.name,
       brand: vehicle.brand,
@@ -138,6 +163,16 @@ export default function AdminVehiclesPage() {
       imageUrl: primaryImg,
     });
     setIsModalOpen(true);
+  };
+
+  const handleOpenGalleryModal = (vehicle: Vehicle) => {
+    setGalleryVehicle(vehicle);
+    setGalleryImages(vehicle.images || []);
+    setNewImageUrl('');
+    setNewImageIsPrimary(false);
+    setGalleryError(null);
+    setGallerySuccess(null);
+    setIsGalleryOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -229,11 +264,144 @@ export default function AdminVehiclesPage() {
     }
   };
 
+  // Image Management Handlers
+  const handleAddImage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!galleryVehicle) return;
+
+    if (!newImageUrl.trim()) {
+      setGalleryError('Please enter an image URL');
+      return;
+    }
+
+    setIsImageSubmitting(true);
+    setGalleryError(null);
+    setGallerySuccess(null);
+
+    try {
+      const res = await fetch(`/api/admin/vehicles/${galleryVehicle.id}/images`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUrl: newImageUrl.trim(),
+          isPrimary: newImageIsPrimary,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to add image');
+      }
+
+      setNewImageUrl('');
+      setNewImageIsPrimary(false);
+      setGallerySuccess('Image added successfully!');
+      fetchVehicles();
+    } catch (err: unknown) {
+      setGalleryError(err instanceof Error ? err.message : 'Error adding image');
+    } finally {
+      setIsImageSubmitting(false);
+    }
+  };
+
+  const handleSetPrimaryImage = async (imageId: string) => {
+    if (!galleryVehicle) return;
+    setGalleryError(null);
+    setGallerySuccess(null);
+
+    try {
+      const res = await fetch(
+        `/api/admin/vehicles/${galleryVehicle.id}/images/${imageId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isPrimary: true }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to set primary image');
+      }
+
+      setGallerySuccess('Primary image updated!');
+      fetchVehicles();
+    } catch (err: unknown) {
+      setGalleryError(
+        err instanceof Error ? err.message : 'Error setting primary image'
+      );
+    }
+  };
+
+  const handleDeleteImage = async (imageId: string) => {
+    if (!galleryVehicle) return;
+    if (!confirm('Are you sure you want to delete this image?')) return;
+
+    setGalleryError(null);
+    setGallerySuccess(null);
+
+    try {
+      const res = await fetch(
+        `/api/admin/vehicles/${galleryVehicle.id}/images/${imageId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to delete image');
+      }
+
+      setGallerySuccess('Image removed successfully!');
+      fetchVehicles();
+    } catch (err: unknown) {
+      setGalleryError(
+        err instanceof Error ? err.message : 'Error deleting image'
+      );
+    }
+  };
+
+  const handleMoveImageOrder = async (index: number, direction: 'up' | 'down') => {
+    if (!galleryVehicle) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= galleryImages.length) return;
+
+    const newOrder = [...galleryImages];
+    const [moved] = newOrder.splice(index, 1);
+    newOrder.splice(targetIndex, 0, moved);
+
+    setGalleryImages(newOrder);
+
+    try {
+      const res = await fetch(`/api/admin/vehicles/${galleryVehicle.id}/images`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageIds: newOrder.map((img) => img.id) }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to reorder images');
+      }
+
+      fetchVehicles();
+    } catch (err: unknown) {
+      setGalleryError(
+        err instanceof Error ? err.message : 'Error updating image order'
+      );
+      fetchVehicles();
+    }
+  };
+
   return (
     <>
       <AdminHeader
         title="Fleet Management"
-        subtitle="Manage fleet vehicles, specifications, rates, and active operational status."
+        subtitle="Manage fleet vehicles, specifications, rates, and image galleries."
       />
 
       <main className="p-6 space-y-6">
@@ -316,12 +484,13 @@ export default function AdminVehiclesPage() {
                     const primaryImg =
                       v.images?.find((img) => img.isPrimary)?.imageUrl ||
                       v.images?.[0]?.imageUrl;
+                    const imageCount = v.images?.length || 0;
 
                     return (
                       <tr key={v.id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-4 px-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-14 h-11 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 border border-slate-200">
+                            <div className="w-14 h-11 bg-slate-100 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 border border-slate-200 relative group">
                               {primaryImg ? (
                                 <Image
                                   src={primaryImg}
@@ -409,14 +578,27 @@ export default function AdminVehiclesPage() {
                         </td>
 
                         <td className="py-4 px-4 text-right">
-                          <div className="inline-flex items-center space-x-2">
+                          <div className="inline-flex items-center space-x-1.5">
+                            {/* Manage Gallery Button */}
+                            <button
+                              onClick={() => handleOpenGalleryModal(v)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-slate-600 hover:text-blue-700 hover:bg-blue-50 border border-slate-200 rounded-md transition-colors text-[11px] font-medium"
+                              title="Manage Vehicle Images"
+                            >
+                              <ImageIcon className="w-3.5 h-3.5 text-blue-600" />
+                              <span>Photos ({imageCount})</span>
+                            </button>
+
+                            {/* Edit Button */}
                             <button
                               onClick={() => handleOpenEditModal(v)}
                               className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                              title="Edit Vehicle"
+                              title="Edit Vehicle Specs"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
+
+                            {/* Delete Button */}
                             <button
                               onClick={() => handleDelete(v.id, v.name)}
                               className="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
@@ -435,6 +617,203 @@ export default function AdminVehiclesPage() {
           )}
         </div>
       </main>
+
+      {/* Image Management Gallery Modal */}
+      {isGalleryOpen && galleryVehicle && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl my-8">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-blue-600" />
+                  <span>Gallery — {galleryVehicle.brand} {galleryVehicle.name}</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Add photos, select the primary showcase image, and manage display order.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsGalleryOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Gallery Alerts */}
+            {gallerySuccess && (
+              <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-2 rounded-xl text-xs flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>{gallerySuccess}</span>
+                </div>
+                <button onClick={() => setGallerySuccess(null)}>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {galleryError && (
+              <div className="mb-4 bg-rose-50 border border-rose-200 text-rose-800 px-3.5 py-2 rounded-xl text-xs flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-600" />
+                  <span>{galleryError}</span>
+                </div>
+                <button onClick={() => setGalleryError(null)}>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Add New Image Form */}
+            <form
+              onSubmit={handleAddImage}
+              className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6"
+            >
+              <h4 className="text-xs font-bold text-slate-800 mb-2">
+                Add New Image URL
+              </h4>
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <input
+                  type="url"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/photo-..."
+                  className="w-full sm:flex-1 px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                  required
+                />
+                <label className="flex items-center gap-1.5 text-xs text-slate-700 whitespace-nowrap cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={newImageIsPrimary}
+                    onChange={(e) => setNewImageIsPrimary(e.target.checked)}
+                    className="w-3.5 h-3.5 text-blue-600 rounded"
+                  />
+                  <span>Set as Primary</span>
+                </label>
+                <button
+                  type="submit"
+                  disabled={isImageSubmitting}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow-xs disabled:opacity-60 transition-colors"
+                >
+                  {isImageSubmitting ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="w-3.5 h-3.5" />
+                  )}
+                  <span>Add Photo</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Existing Images List / Grid */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                Vehicle Photos ({galleryImages.length})
+              </h4>
+
+              {galleryImages.length === 0 ? (
+                <div className="py-12 text-center text-slate-400 text-xs border-2 border-dashed border-slate-200 rounded-xl">
+                  <ImageIcon className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                  <span>No images uploaded for this vehicle yet.</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[380px] overflow-y-auto pr-1">
+                  {galleryImages.map((img, index) => (
+                    <div
+                      key={img.id}
+                      className={`relative bg-white rounded-xl border p-2.5 shadow-xs flex flex-col justify-between transition-all ${
+                        img.isPrimary
+                          ? 'border-blue-500 ring-2 ring-blue-500/20 bg-blue-50/20'
+                          : 'border-slate-200'
+                      }`}
+                    >
+                      {/* Image Thumbnail */}
+                      <div className="w-full h-32 bg-slate-100 rounded-lg overflow-hidden relative mb-2">
+                        <Image
+                          src={img.imageUrl}
+                          alt="Vehicle"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                        {/* Primary Badge */}
+                        {img.isPrimary && (
+                          <div className="absolute top-2 left-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md shadow-sm flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-white" />
+                            <span>PRIMARY</span>
+                          </div>
+                        )}
+                        {/* Order Badge */}
+                        <div className="absolute top-2 right-2 bg-slate-900/70 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                          #{index + 1}
+                        </div>
+                      </div>
+
+                      {/* URL Preview */}
+                      <div className="text-[10px] text-slate-400 truncate mb-2 px-0.5">
+                        {img.imageUrl}
+                      </div>
+
+                      {/* Action Bar */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 text-xs">
+                        {/* Reorder Buttons */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleMoveImageOrder(index, 'up')}
+                            disabled={index === 0}
+                            className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-30"
+                            title="Move Up"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleMoveImageOrder(index, 'down')}
+                            disabled={index === galleryImages.length - 1}
+                            className="p-1 rounded text-slate-500 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-30"
+                            title="Move Down"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Set Primary Button */}
+                        {!img.isPrimary && (
+                          <button
+                            onClick={() => handleSetPrimaryImage(img.id)}
+                            className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 hover:underline"
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>Set Primary</span>
+                          </button>
+                        )}
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() => handleDeleteImage(img.id)}
+                          className="p-1 rounded text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition-colors ml-auto"
+                          title="Delete Image"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-5 border-t border-slate-100 mt-6 flex justify-end">
+              <button
+                onClick={() => setIsGalleryOpen(false)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-xs"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add / Edit Vehicle Modal */}
       {isModalOpen && (

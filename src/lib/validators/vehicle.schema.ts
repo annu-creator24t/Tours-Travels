@@ -26,5 +26,25 @@ export const createVehicleSchema = z.object({
 
 export const updateVehicleSchema = createVehicleSchema.partial();
 
+export const addVehicleImageSchema = z.object({
+  imageUrl: z.string().trim().url('Please enter a valid image URL (e.g. https://...)'),
+  isPrimary: z.boolean().optional().default(false),
+  displayOrder: z.number().int().min(0).optional(),
+});
+
+export const reorderVehicleImagesSchema = z.object({
+  imageIds: z
+    .array(z.string().uuid('Invalid image ID format'))
+    .min(1, 'At least one image ID is required to reorder'),
+});
+
+export const updateVehicleImageSchema = z.object({
+  isPrimary: z.boolean().optional(),
+  displayOrder: z.number().int().min(0).optional(),
+});
+
 export type CreateVehicleInput = z.infer<typeof createVehicleSchema>;
 export type UpdateVehicleInput = z.infer<typeof updateVehicleSchema>;
+export type AddVehicleImageInput = z.infer<typeof addVehicleImageSchema>;
+export type ReorderVehicleImagesInput = z.infer<typeof reorderVehicleImagesSchema>;
+export type UpdateVehicleImageInput = z.infer<typeof updateVehicleImageSchema>;
