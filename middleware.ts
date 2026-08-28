@@ -11,7 +11,31 @@ const AUTH_COOKIE_NAME = 'admin_session_token';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only protect /admin routes (except /admin/login)
+  // 1. Protect /api/admin/* API endpoints (except login)
+  if (pathname.startsWith('/api/admin') && pathname !== '/api/admin/auth/login') {
+    const token =
+      request.cookies.get(AUTH_COOKIE_NAME)?.value ||
+      request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Admin authentication required' },
+        { status: 401 }
+      );
+    }
+
+    try {
+      await jwtVerify(token, JWT_SECRET_KEY);
+      return NextResponse.next();
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized: Invalid or expired session' },
+        { status: 401 }
+      );
+    }
+  }
+
+  // 2. Protect /admin UI routes (except /admin/login)
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
     const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
 
@@ -24,7 +48,7 @@ export async function middleware(request: NextRequest) {
       await jwtVerify(token, JWT_SECRET_KEY);
       return NextResponse.next();
     } catch {
-      // Invalid or expired token
+      // Invalid or expired token -> clear cookie & redirect
       const loginUrl = new URL('/admin/login', request.url);
       const response = NextResponse.redirect(loginUrl);
       response.cookies.delete(AUTH_COOKIE_NAME);
@@ -32,7 +56,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // If accessing /admin/login while already authenticated, redirect to /admin dashboard
+  // 3. If accessing /admin/login while already authenticated, redirect to /admin dashboard
   if (pathname === '/admin/login') {
     const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
     if (token) {
@@ -49,5 +73,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*'],
 };
