@@ -1,5 +1,5 @@
 import prisma from '@/lib/db';
-import { PaymentStatus, PaymentType } from '@prisma/client';
+import { PaymentStatus, PaymentType, Prisma } from '@prisma/client';
 import { paymentGateway } from './payment-gateway.provider';
 
 export interface VerifyPaymentInput {
@@ -9,6 +9,7 @@ export interface VerifyPaymentInput {
   signature: string;
   rawResponse?: Record<string, unknown>;
 }
+
 
 export class PaymentService {
   /**
@@ -200,53 +201,132 @@ export class PaymentService {
   }
 
   /**
-   * Processes gateway webhook event
+   * Processes gateway webhook event with cryptographic verification,
+   * amount check, idempotency, and atomic transaction updates.
    */
   static async handleWebhook(rawBody: string, signature: string) {
     // 1. Verify Webhook Signature
     const isValid = paymentGateway.verifyWebhookSignature(rawBody, signature);
     if (!isValid) {
-      throw new Error('Unauthorized webhook: Signature mismatch');
+      throw new Error('Unauthorized webhook: Signature verification failed');
     }
 
-    const event = JSON.parse(rawBody);
-    const eventType = event.event;
+    let event: Record<string, unknown>;
+    try {
+      event = JSON.parse(rawBody);
+    } catch {
+      throw new Error('Invalid JSON webhook payload');
+    }
 
-    // Handle payment captured / authorized webhook events
-    if (eventType === 'payment.captured' || eventType === 'order.paid') {
-      const orderId = event.payload?.payment?.entity?.order_id || event.payload?.order?.entity?.id;
-      const paymentId = event.payload?.payment?.entity?.id;
+    const eventType = (event.event as string) || '';
+
+    // Handle payment captured / order paid webhook events
+    if (eventType === 'payment.captured' || eventType === 'order.paid' || eventType === 'payment.authorized') {
+      const payloadObj = (event.payload as Record<string, Record<string, Record<string, unknown>>>) || {};
+      const paymentEntity = payloadObj.payment?.entity;
+      const orderEntity = payloadObj.order?.entity;
+
+      const orderId = (paymentEntity?.order_id as string) || (orderEntity?.id as string) || '';
+      const paymentId = (paymentEntity?.id as string) || `pay_${Date.now()}`;
 
       if (!orderId) {
-        return { received: true, ignored: true };
+        return { received: true, ignored: true, reason: 'Missing order_id in webhook payload' };
       }
 
       return prisma.$transaction(async (tx) => {
+        // Find matching pending payment record
         const payment = await tx.payment.findFirst({
           where: { transactionRef: orderId },
           include: { booking: true },
         });
 
-        if (!payment || payment.status === PaymentStatus.PAID) {
-          return { received: true, alreadyProcessed: true };
+        if (!payment) {
+          throw new Error(`Payment order record with reference ${orderId} not found`);
         }
 
-        await tx.payment.update({
+        // Idempotency: If already marked as PAID, acknowledge without re-processing
+        if (payment.status === PaymentStatus.PAID) {
+          return {
+            received: true,
+            alreadyProcessed: true,
+            paymentId: payment.id,
+            bookingRef: payment.booking.bookingRef,
+          };
+        }
+
+        // Amount verification: Validate webhook amount matches expected advance amount
+        if (paymentEntity?.amount !== undefined) {
+          const rawAmount = Number(paymentEntity.amount);
+          // Gateways like Razorpay send amount in smallest currency unit (paise)
+          const parsedAmount = rawAmount > Number(payment.amount) * 10 ? rawAmount / 100 : rawAmount;
+
+          if (parsedAmount !== Number(payment.amount)) {
+            await tx.payment.update({
+              where: { id: payment.id },
+              data: {
+                status: PaymentStatus.FAILED,
+                gatewayResponse: {
+                  error: 'Amount mismatch',
+                  expected: Number(payment.amount),
+                  received: parsedAmount,
+                  webhookEvent: eventType,
+                  receivedAt: new Date().toISOString(),
+                },
+              },
+            });
+            throw new Error(
+              `Webhook amount mismatch: Expected ₹${Number(payment.amount)}, but received ₹${parsedAmount}`
+            );
+          }
+        }
+
+        // Mark payment as PAID
+        const updatedPayment = await tx.payment.update({
           where: { id: payment.id },
           data: {
             status: PaymentStatus.PAID,
             gatewayResponse: {
               webhookEvent: eventType,
-              paymentId,
-              receivedAt: new Date().toISOString(),
-            },
+              gatewayPaymentId: paymentId,
+              orderId,
+              verifiedAt: new Date().toISOString(),
+              payload: event as Prisma.InputJsonObject,
+            } as Prisma.InputJsonObject,
           },
         });
 
-        return { received: true, success: true };
+
+        // Recalculate booking balance
+        const totalPaid = await tx.payment.aggregate({
+          where: {
+            bookingId: payment.bookingId,
+            status: PaymentStatus.PAID,
+          },
+          _sum: { amount: true },
+        });
+
+        const totalPaidSum = Number(totalPaid._sum.amount || 0);
+        const finalPrice = Number(payment.booking.finalPrice || payment.booking.estimatedPrice);
+        const newBalance = Math.max(0, finalPrice - totalPaidSum);
+
+        await tx.booking.update({
+          where: { id: payment.bookingId },
+          data: {
+            balanceAmount: newBalance,
+          },
+        });
+
+        return {
+          received: true,
+          success: true,
+          paymentId: updatedPayment.id,
+          bookingRef: payment.booking.bookingRef,
+          balanceRemaining: newBalance,
+        };
       });
     }
 
-    return { received: true, status: 'acknowledged' };
+    return { received: true, status: 'acknowledged', eventType };
   }
+
 }

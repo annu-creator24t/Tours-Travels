@@ -26,9 +26,11 @@ export async function POST(request: Request) {
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : 'Failed to process webhook';
+    const isUnauthorized = message.toLowerCase().includes('unauthorized') || message.toLowerCase().includes('signature');
     return NextResponse.json(
       { success: false, error: message },
-      { status: 400 }
+      { status: isUnauthorized ? 401 : 400 }
     );
   }
+
 }
