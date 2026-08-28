@@ -6,15 +6,17 @@ export type PaymentStatus =
   | 'REFUNDED'
   | 'PARTIALLY_REFUNDED';
 
-export type PaymentType = 'ADVANCE' | 'FULL' | 'BALANCE';
+export type PaymentType = 'ADVANCE' | 'BALANCE' | 'FULL' | 'REFUND';
 
 export interface PaymentRecord {
   id: string;
   bookingId: string;
-  transactionRef: string;
+  transactionRef?: string | null;
   gatewayName: string;
   amount: number;
   paymentType: PaymentType;
   status: PaymentStatus;
+  gatewayResponse?: Record<string, unknown> | null;
   createdAt: string | Date;
+  updatedAt: string | Date;
 }

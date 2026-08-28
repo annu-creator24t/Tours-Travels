@@ -21,6 +21,7 @@ export interface BookingItem {
   passengerCount: number;
   vehicleId?: string | null;
   driverId?: string | null;
+  managedByAdminId?: string | null;
   status: BookingStatus;
   estimatedPrice: number;
   finalPrice?: number | null;
@@ -29,4 +30,5 @@ export interface BookingItem {
   customerNotes?: string | null;
   adminNotes?: string | null;
   createdAt: string | Date;
+  updatedAt: string | Date;
 }

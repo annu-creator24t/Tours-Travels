@@ -77,8 +77,11 @@ cp .env.example .env
 # Generate Prisma Client
 npm run prisma:generate
 
-# Run Database Migrations (When database is connected)
+# Run Database Migrations (When PostgreSQL instance is running)
 npm run prisma:migrate
+
+# Seed realistic development data (Fleet, Drivers, Reviews, Sample Bookings)
+npm run prisma:seed
 ```
 
 ### 5. Running the Application

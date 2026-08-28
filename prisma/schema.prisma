@@ -1,5 +1,4 @@
-// Prisma schema foundation for Tours & Travels
-// Full database schema models will be expanded in Step 2.
+// Tours & Travels — V1 Production Database Schema
 
 generator client {
   provider = "prisma-client-js"
@@ -10,15 +9,245 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Initial Admin User Model Foundation
+// ----------------------------------------------------
+// ENUMS
+// ----------------------------------------------------
+
+enum AdminRole {
+  ADMIN
+  SUPERADMIN
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  BOOKED
+  ON_TRIP
+  MAINTENANCE
+  INACTIVE
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_TRIP
+  OFF_DUTY
+  INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum TripType {
+  ONE_WAY
+  ROUND_TRIP
+  LOCAL_RENTAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentType {
+  ADVANCE
+  BALANCE
+  FULL
+  REFUND
+}
+
+enum ReviewSource {
+  JUSTDIAL
+  VERIFIED_CUSTOMER
+  OTHER
+}
+
+// ----------------------------------------------------
+// MODELS
+// ----------------------------------------------------
+
+/// Admin user model for console authentication and booking management
 model Admin {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String    @id @default(uuid())
+  email        String    @unique
   name         String
-  passwordHash String   @map("password_hash")
-  role         String   @default("ADMIN")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  passwordHash String    @map("password_hash")
+  role         AdminRole @default(ADMIN)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  // Bookings confirmed/managed by this admin
+  managedBookings Booking[] @relation("AdminManagedBookings")
 
   @@map("admins")
+}
+
+/// Vehicle entity representing fleet inventory
+model Vehicle {
+  id              String        @id @default(uuid())
+  slug            String        @unique
+  name            String
+  brand           String
+  vehicleType     String        @map("vehicle_type")
+  seatingCapacity Int           @map("seating_capacity")
+  luggageCapacity Int           @map("luggage_capacity")
+  hasAc           Boolean       @default(true) @map("has_ac")
+  fuelType        String        @map("fuel_type")
+  transmission    String?       @map("transmission")
+  perKmRate       Decimal       @map("per_km_rate") @db.Decimal(10, 2)
+  baseDayRate     Decimal       @map("base_day_rate") @db.Decimal(10, 2)
+  status          VehicleStatus @default(AVAILABLE)
+  isFeatured      Boolean       @default(false) @map("is_featured")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  images             VehicleImage[]
+  bookings           Booking[]
+  reviews            Review[]
+  availabilityBlocks AvailabilityBlock[]
+
+  @@index([status])
+  @@index([vehicleType])
+  @@map("vehicles")
+}
+
+/// Multi-image support for vehicle gallery & listings
+model VehicleImage {
+  id           String   @id @default(uuid())
+  vehicleId    String   @map("vehicle_id")
+  imageUrl     String   @map("image_url")
+  isPrimary    Boolean  @default(false) @map("is_primary")
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, displayOrder])
+  @@map("vehicle_images")
+}
+
+/// Company-employed or partnered driver profile
+model Driver {
+  id              String       @id @default(uuid())
+  name            String
+  phone           String       @unique
+  licenseNumber   String       @map("license_number")
+  experienceYears Int          @map("experience_years")
+  status          DriverStatus @default(AVAILABLE)
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  bookings Booking[]
+
+  @@index([status])
+  @@map("drivers")
+}
+
+/// Core booking entity representing customer trip requests and confirmed reservations
+model Booking {
+  id               String        @id @default(uuid())
+  bookingRef       String        @unique @map("booking_ref")
+  customerName     String        @map("customer_name")
+  customerPhone    String        @map("customer_phone")
+  customerEmail    String?       @map("customer_email")
+  pickupLocation   String        @map("pickup_location")
+  dropLocation     String        @map("drop_location")
+  pickupDatetime   DateTime      @map("pickup_datetime")
+  returnDatetime   DateTime?     @map("return_datetime")
+  tripType         TripType      @default(ONE_WAY) @map("trip_type")
+  passengerCount   Int           @map("passenger_count")
+  vehicleId        String?       @map("vehicle_id")
+  driverId         String?       @map("driver_id")
+  managedByAdminId String?       @map("managed_by_admin_id")
+  status           BookingStatus @default(PENDING)
+  estimatedPrice   Decimal       @map("estimated_price") @db.Decimal(10, 2)
+  finalPrice       Decimal?      @map("final_price") @db.Decimal(10, 2)
+  advanceAmount    Decimal?      @map("advance_amount") @db.Decimal(10, 2)
+  balanceAmount    Decimal?      @map("balance_amount") @db.Decimal(10, 2)
+  customerNotes    String?       @map("customer_notes") @db.Text
+  adminNotes       String?       @map("admin_notes") @db.Text
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  vehicle        Vehicle?  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  driver         Driver?   @relation(fields: [driverId], references: [id], onDelete: SetNull)
+  managedByAdmin Admin?    @relation("AdminManagedBookings", fields: [managedByAdminId], references: [id], onDelete: SetNull)
+  payments       Payment[]
+
+  @@index([vehicleId, pickupDatetime, returnDatetime, status])
+  @@index([status])
+  @@index([customerPhone])
+  @@index([pickupDatetime])
+  @@map("bookings")
+}
+
+/// Financial payment records for advance and balance transactions
+model Payment {
+  id              String        @id @default(uuid())
+  bookingId       String        @map("booking_id")
+  transactionRef  String?       @unique @map("transaction_ref")
+  gatewayName     String        @default("MANUAL_UPI") @map("gateway_name")
+  amount          Decimal       @db.Decimal(10, 2)
+  paymentType     PaymentType   @default(ADVANCE) @map("payment_type")
+  status          PaymentStatus @default(PENDING)
+  gatewayResponse Json?         @map("gateway_response")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([status])
+  @@map("payments")
+}
+
+/// Customer & Justdial reviews for vehicles or general company service
+model Review {
+  id          String       @id @default(uuid())
+  vehicleId   String?      @map("vehicle_id")
+  authorName  String       @map("author_name")
+  rating      Int
+  reviewText  String       @map("review_text") @db.Text
+  reviewDate  DateTime     @default(now()) @map("review_date")
+  source      ReviewSource @default(VERIFIED_CUSTOMER)
+  sourceUrl   String?      @map("source_url")
+  isApproved  Boolean      @default(false) @map("is_approved")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@index([vehicleId, isApproved])
+  @@index([source])
+  @@map("reviews")
+}
+
+/// Manual or maintenance blocks preventing vehicle booking during specific time windows
+model AvailabilityBlock {
+  id            String   @id @default(uuid())
+  vehicleId     String   @map("vehicle_id")
+  startDatetime DateTime @map("start_datetime")
+  endDatetime   DateTime @map("end_datetime")
+  reason        String
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId, startDatetime, endDatetime])
+  @@map("availability_blocks")
 }
