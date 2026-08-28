@@ -26,6 +26,7 @@ interface AdvancePaymentBoxProps {
   balanceAmount?: number | null;
   isAdvancePaid: boolean;
   paidTransactionRef?: string | null;
+  hasFailedPayment?: boolean;
 }
 
 export default function AdvancePaymentBox({
@@ -40,9 +41,11 @@ export default function AdvancePaymentBox({
   balanceAmount,
   isAdvancePaid,
   paidTransactionRef,
+  hasFailedPayment = false,
 }: AdvancePaymentBoxProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [orderData, setOrderData] = useState<{
     orderId: string;
@@ -237,6 +240,18 @@ export default function AdvancePaymentBox({
         </div>
       </div>
 
+      {hasFailedPayment && !errorMessage && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3 rounded-xl text-xs flex items-center gap-2.5 mb-3">
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+          <div>
+            <span className="font-bold block">Previous Payment Incomplete / Failed</span>
+            <span className="text-[11px] text-amber-800">
+              Your previous transaction was not completed. Please retry your advance payment below to secure your vehicle.
+            </span>
+          </div>
+        </div>
+      )}
+
       {errorMessage && (
         <div className="bg-rose-50 border border-rose-200 text-rose-800 p-2.5 rounded-lg text-xs flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2">
@@ -252,7 +267,11 @@ export default function AdvancePaymentBox({
       <button
         onClick={handleInitiatePayment}
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition-colors disabled:opacity-60"
+        className={`w-full font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-sm transition-colors disabled:opacity-60 text-white ${
+          hasFailedPayment
+            ? 'bg-amber-600 hover:bg-amber-700'
+            : 'bg-blue-600 hover:bg-blue-700'
+        }`}
       >
         {isLoading ? (
           <>
@@ -262,11 +281,14 @@ export default function AdvancePaymentBox({
         ) : (
           <>
             <CreditCard className="w-4 h-4" />
-            <span>Pay Advance (₹{advanceNum})</span>
+            <span>
+              {hasFailedPayment ? `Retry Advance Payment (₹${advanceNum})` : `Pay Advance (₹${advanceNum})`}
+            </span>
             <ArrowRight className="w-3.5 h-3.5 ml-1" />
           </>
         )}
       </button>
+
 
       {/* Payment Gateway Checkout Modal */}
       {showPaymentModal && orderData && (
