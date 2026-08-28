@@ -118,26 +118,26 @@ export class VehicleService {
     }
 
     // 2. Check overlapping CONFIRMED bookings in database
-    const overlappingBooking = await tx.booking.findFirst({
+    const potentialBookings = await tx.booking.findMany({
       where: {
         vehicleId,
         status: 'CONFIRMED',
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
-        AND: [
-          { pickupDatetime: { lte: end } },
-          {
-            OR: [
-              { returnDatetime: { gte: start } },
-              { returnDatetime: null, pickupDatetime: { gte: start } },
-            ],
-          },
-        ],
+        pickupDatetime: { lte: end },
       },
       select: {
         bookingRef: true,
         pickupDatetime: true,
         returnDatetime: true,
       },
+    });
+
+    const overlappingBooking = potentialBookings.find((b) => {
+      const bStart = new Date(b.pickupDatetime);
+      const bEnd = b.returnDatetime
+        ? new Date(b.returnDatetime)
+        : new Date(bStart.getTime() + 24 * 60 * 60 * 1000);
+      return bStart <= end && bEnd >= start;
     });
 
     if (overlappingBooking) {

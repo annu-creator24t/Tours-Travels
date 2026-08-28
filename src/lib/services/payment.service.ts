@@ -43,6 +43,13 @@ export class PaymentService {
       );
     }
 
+    const finalPrice = Number(booking.finalPrice || booking.estimatedPrice);
+    if (advanceAmount > finalPrice) {
+      throw new Error(
+        `Advance amount (₹${advanceAmount}) cannot exceed total booking quote (₹${finalPrice}).`
+      );
+    }
+
     // 3. Duplicate payment prevention: Check if already paid
     const existingPaid = booking.payments.find(
       (p) => p.paymentType === PaymentType.ADVANCE && p.status === PaymentStatus.PAID
