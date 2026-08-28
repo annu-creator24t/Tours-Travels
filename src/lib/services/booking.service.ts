@@ -98,51 +98,57 @@ export class BookingService {
   }
 
   /**
-   * Admin: Confirms booking with quote or updates status
+   * Admin: Atomic confirmation / status update with strict transaction isolation
+   * and double-booking concurrency protection.
    */
   static async updateBookingStatus(
     id: string,
     input: UpdateBookingStatusInput,
     adminId?: string
   ) {
-    const booking = await prisma.booking.findUnique({ where: { id } });
-    if (!booking) {
-      throw new Error('Booking not found');
-    }
-
-    // Concurrency / Double booking check if status is transitioning to CONFIRMED
-    const vehicleId = input.vehicleId || booking.vehicleId;
-    if (input.status === BookingStatus.CONFIRMED && vehicleId) {
-      const isAvailable = await VehicleService.isVehicleAvailable(
-        vehicleId,
-        booking.pickupDatetime,
-        booking.returnDatetime
-      );
-
-      if (!isAvailable) {
-        throw new Error(
-          'Selected vehicle has an overlapping confirmed booking or maintenance block.'
-        );
+    return prisma.$transaction(async (tx) => {
+      const booking = await tx.booking.findUnique({ where: { id } });
+      if (!booking) {
+        throw new Error('Booking record not found');
       }
-    }
 
-    return prisma.booking.update({
-      where: { id },
-      data: {
-        status: input.status,
-        vehicleId: input.vehicleId,
-        driverId: input.driverId,
-        finalPrice: input.finalPrice !== undefined ? input.finalPrice : undefined,
-        advanceAmount: input.advanceAmount !== undefined ? input.advanceAmount : undefined,
-        balanceAmount: input.balanceAmount !== undefined ? input.balanceAmount : undefined,
-        adminNotes: input.adminNotes,
-        managedByAdminId: adminId,
-      },
-      include: {
-        vehicle: true,
-        driver: true,
-        payments: true,
-      },
+      const vehicleId = input.vehicleId !== undefined ? input.vehicleId : booking.vehicleId;
+
+      // When transitioning to or maintaining CONFIRMED status with an assigned vehicle:
+      if (input.status === BookingStatus.CONFIRMED && vehicleId) {
+        const availability = await VehicleService.isVehicleAvailable(
+          vehicleId,
+          booking.pickupDatetime,
+          booking.returnDatetime,
+          booking.id, // Exclude this booking so re-saving its own quote doesn't self-conflict
+          tx
+        );
+
+        if (!availability.available) {
+          throw new Error(
+            `Double-booking conflict prevented: ${availability.reason || 'Vehicle is not available for these dates.'}`
+          );
+        }
+      }
+
+      return tx.booking.update({
+        where: { id },
+        data: {
+          status: input.status,
+          vehicleId: input.vehicleId,
+          driverId: input.driverId,
+          finalPrice: input.finalPrice !== undefined ? input.finalPrice : undefined,
+          advanceAmount: input.advanceAmount !== undefined ? input.advanceAmount : undefined,
+          balanceAmount: input.balanceAmount !== undefined ? input.balanceAmount : undefined,
+          adminNotes: input.adminNotes,
+          managedByAdminId: adminId,
+        },
+        include: {
+          vehicle: true,
+          driver: true,
+          payments: true,
+        },
+      });
     });
   }
 }

@@ -84,46 +84,91 @@ export class VehicleService {
   }
 
   /**
-   * Checks whether a vehicle is free from confirmed bookings & maintenance blocks
+   * Atomic concurrency check: Verifies if a vehicle is free from confirmed bookings and maintenance blocks.
+   * Accepts an optional Prisma transaction client for atomic execution.
    */
   static async isVehicleAvailable(
     vehicleId: string,
     pickupDatetime: Date,
-    returnDatetime?: Date | null
-  ): Promise<boolean> {
-    const endDatetime = returnDatetime || new Date(pickupDatetime.getTime() + 24 * 60 * 60 * 1000);
+    returnDatetime?: Date | null,
+    excludeBookingId?: string,
+    tx: Prisma.TransactionClient = prisma
+  ): Promise<{ available: boolean; reason?: string }> {
+    const start = new Date(pickupDatetime);
+    const end = returnDatetime
+      ? new Date(returnDatetime)
+      : new Date(start.getTime() + 24 * 60 * 60 * 1000); // 24h default for one-way
 
-    // 1. Check overlapping confirmed/active bookings
-    const overlappingBookings = await prisma.booking.findFirst({
+    // 1. Check vehicle operational status
+    const vehicle = await tx.vehicle.findUnique({
+      where: { id: vehicleId },
+      select: { status: true, name: true },
+    });
+
+    if (!vehicle) {
+      return { available: false, reason: 'Vehicle does not exist in inventory' };
+    }
+
+    if (vehicle.status === VehicleStatus.INACTIVE) {
+      return { available: false, reason: 'Vehicle is currently inactive/decommissioned' };
+    }
+
+    if (vehicle.status === VehicleStatus.MAINTENANCE) {
+      return { available: false, reason: 'Vehicle is currently undergoing maintenance' };
+    }
+
+    // 2. Check overlapping CONFIRMED bookings in database
+    const overlappingBooking = await tx.booking.findFirst({
       where: {
         vehicleId,
-        status: { in: ['CONFIRMED'] },
+        status: 'CONFIRMED',
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
         AND: [
-          { pickupDatetime: { lte: endDatetime } },
+          { pickupDatetime: { lte: end } },
           {
             OR: [
-              { returnDatetime: { gte: pickupDatetime } },
-              { returnDatetime: null, pickupDatetime: { gte: pickupDatetime } },
+              { returnDatetime: { gte: start } },
+              { returnDatetime: null, pickupDatetime: { gte: start } },
             ],
           },
         ],
       },
-    });
-
-    if (overlappingBookings) return false;
-
-    // 2. Check overlapping maintenance/blackout blocks
-    const overlappingBlock = await prisma.availabilityBlock.findFirst({
-      where: {
-        vehicleId,
-        startDatetime: { lte: endDatetime },
-        endDatetime: { gte: pickupDatetime },
+      select: {
+        bookingRef: true,
+        pickupDatetime: true,
+        returnDatetime: true,
       },
     });
 
-    if (overlappingBlock) return false;
+    if (overlappingBooking) {
+      return {
+        available: false,
+        reason: `Vehicle has a confirmed booking (#${overlappingBooking.bookingRef}) overlapping this schedule.`,
+      };
+    }
 
-    return true;
+    // 3. Check overlapping Availability / Maintenance Blocks
+    const overlappingBlock = await tx.availabilityBlock.findFirst({
+      where: {
+        vehicleId,
+        startDatetime: { lte: end },
+        endDatetime: { gte: start },
+      },
+      select: {
+        reason: true,
+        startDatetime: true,
+        endDatetime: true,
+      },
+    });
+
+    if (overlappingBlock) {
+      return {
+        available: false,
+        reason: `Vehicle is blocked during this period (${overlappingBlock.reason}).`,
+      };
+    }
+
+    return { available: true };
   }
 
   /**
