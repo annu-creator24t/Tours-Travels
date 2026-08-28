@@ -1,37 +1,26 @@
 import { NextResponse } from 'next/server';
 import { PaymentService } from '@/lib/services/payment.service';
-import { PaymentType } from '@prisma/client';
 import { z } from 'zod';
 
-const createOrderSchema = z.object({
+const createAdvanceOrderSchema = z.object({
   bookingRef: z.string().min(1, 'Booking reference is required'),
-  amount: z.number().positive('Amount must be positive'),
-  paymentType: z.enum(['ADVANCE', 'BALANCE', 'FULL', 'REFUND']).default('ADVANCE'),
 });
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const validatedData = createOrderSchema.parse(body);
+    const { bookingRef } = createAdvanceOrderSchema.parse(body);
 
-    const paymentRecord = await PaymentService.createPaymentRecord({
-      bookingRef: validatedData.bookingRef,
-      amount: validatedData.amount,
-      paymentType: validatedData.paymentType as PaymentType,
-    });
+    const orderData = await PaymentService.createAdvanceOrder(bookingRef);
 
     return NextResponse.json({
       success: true,
-      message: 'Payment order initiated',
-      data: {
-        transactionRef: paymentRecord.transactionRef,
-        amount: paymentRecord.amount,
-        gatewayName: paymentRecord.gatewayName,
-        status: paymentRecord.status,
-      },
+      message: 'Advance payment order created successfully',
+      data: orderData,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to create payment order';
+    const message =
+      error instanceof Error ? error.message : 'Failed to create payment order';
     return NextResponse.json(
       { success: false, error: message },
       { status: 400 }

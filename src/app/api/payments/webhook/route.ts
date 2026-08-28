@@ -3,28 +3,29 @@ import { PaymentService } from '@/lib/services/payment.service';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const rawBody = await request.text();
+    const signature =
+      request.headers.get('x-razorpay-signature') ||
+      request.headers.get('x-payment-signature') ||
+      '';
 
-    const transactionRef = body.transactionRef || body.payload?.payment?.entity?.notes?.transactionRef;
-    if (!transactionRef) {
+    if (!signature) {
       return NextResponse.json(
-        { success: false, error: 'Transaction reference missing' },
-        { status: 400 }
+        { success: false, error: 'Missing webhook signature header' },
+        { status: 401 }
       );
     }
 
-    const updatedPayment = await PaymentService.markPaymentPaid(transactionRef, body);
+    const result = await PaymentService.handleWebhook(rawBody, signature);
 
     return NextResponse.json({
       success: true,
-      message: 'Payment captured and reconciled successfully',
-      data: {
-        transactionRef: updatedPayment.transactionRef,
-        status: updatedPayment.status,
-      },
+      message: 'Webhook processed',
+      data: result,
     });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Webhook processing error';
+    const message =
+      error instanceof Error ? error.message : 'Failed to process webhook';
     return NextResponse.json(
       { success: false, error: message },
       { status: 400 }

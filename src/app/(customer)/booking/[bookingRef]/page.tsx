@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { companyConfig } from '@/lib/company.config';
+import AdvancePaymentBox from '@/components/customer/AdvancePaymentBox';
 
 export const revalidate = 0;
 
@@ -172,6 +173,23 @@ export default async function BookingStatusPage({
               )}
             </div>
           </div>
+
+          {/* Advance Payment Section */}
+          <AdvancePaymentBox
+            bookingRef={booking.bookingRef}
+            status={booking.status}
+            finalPrice={booking.finalPrice ? Number(booking.finalPrice) : Number(booking.estimatedPrice)}
+            advanceAmount={booking.advanceAmount ? Number(booking.advanceAmount) : 0}
+            balanceAmount={booking.balanceAmount ? Number(booking.balanceAmount) : null}
+            isAdvancePaid={booking.payments.some(
+              (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
+            )}
+            paidTransactionRef={
+              booking.payments.find(
+                (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
+              )?.transactionRef
+            }
+          />
 
           {/* Trip Details Grid */}
           <div>
