@@ -167,5 +167,20 @@ export const updateBookingStatusSchema = z
     }
   );
 
+export const cancelBookingCustomerSchema = z.object({
+  customerPhone: z
+    .string({ required_error: 'Registered mobile number is required for verification' })
+    .trim()
+    .min(1, 'Phone number is required for cancellation verification'),
+  reason: z
+    .string()
+    .trim()
+    .max(500, 'Cancellation reason cannot exceed 500 characters')
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+});
+
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 export type UpdateBookingStatusInput = z.infer<typeof updateBookingStatusSchema>;
+export type CancelBookingCustomerInput = z.infer<typeof cancelBookingCustomerSchema>;

@@ -242,6 +242,11 @@ export class BookingService {
         }
       }
 
+      // Status transition validation
+      if (booking.status === BookingStatus.COMPLETED && input.status !== BookingStatus.COMPLETED) {
+        throw new Error('Completed bookings cannot be cancelled or modified');
+      }
+
       // Financial calculations and validation
       // 1. Authoritative Final Quote
       let finalPriceToSet: number | null | undefined = undefined;
@@ -319,6 +324,69 @@ export class BookingService {
           payments: true,
         },
       });
+    });
+  }
+
+  /**
+   * Customer: Allows a customer to securely cancel their own booking request using phone verification.
+   * Preserves all history, database records, and immediately unblocks vehicle schedules.
+   */
+  static async cancelBookingByCustomer(
+    bookingRef: string,
+    input: { customerPhone: string; reason?: string | null }
+  ) {
+    const booking = await prisma.booking.findUnique({
+      where: { bookingRef },
+      include: { payments: true, vehicle: true, driver: true },
+    });
+
+    if (!booking) {
+      throw new Error(`Booking #${bookingRef} not found`);
+    }
+
+    // 1. Phone number verification
+    const normDbPhone = booking.customerPhone.replace(/\D/g, '');
+    const normInputPhone = input.customerPhone.replace(/\D/g, '');
+    const dbLast10 = normDbPhone.slice(-10);
+    const inputLast10 = normInputPhone.slice(-10);
+
+    if (normDbPhone !== normInputPhone && (!dbLast10 || dbLast10 !== inputLast10)) {
+      throw new Error('Unauthorized: Verification phone number does not match this booking');
+    }
+
+    // 2. Prevent cancellation of completed trips
+    if (booking.status === BookingStatus.COMPLETED) {
+      throw new Error('Completed bookings cannot be cancelled');
+    }
+
+    // 3. Handle already cancelled bookings safely
+    if (booking.status === BookingStatus.CANCELLED) {
+      return {
+        ...booking,
+        alreadyCancelled: true,
+      };
+    }
+
+    // 4. Update status to CANCELLED and preserve complete history
+    let updatedCustomerNotes = booking.customerNotes;
+    if (input.reason && input.reason.trim()) {
+      const reasonEntry = `[Customer Cancellation Reason]: ${input.reason.trim()}`;
+      updatedCustomerNotes = booking.customerNotes
+        ? `${booking.customerNotes}\n${reasonEntry}`
+        : reasonEntry;
+    }
+
+    return prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: BookingStatus.CANCELLED,
+        customerNotes: updatedCustomerNotes,
+      },
+      include: {
+        vehicle: true,
+        driver: true,
+        payments: true,
+      },
     });
   }
 }

@@ -17,6 +17,7 @@ import Badge from '@/components/ui/Badge';
 import { companyConfig } from '@/lib/company.config';
 import AdvancePaymentBox from '@/components/customer/AdvancePaymentBox';
 import BookingTimeline from '@/components/customer/BookingTimeline';
+import CancelBookingBox from '@/components/customer/CancelBookingBox';
 
 
 export const revalidate = 0;
@@ -461,6 +462,13 @@ export default async function BookingStatusPage({
               )}
             </div>
           )}
+
+          {/* Customer Cancellation Action */}
+          <CancelBookingBox
+            bookingRef={booking.bookingRef}
+            status={booking.status}
+            customerNotes={booking.customerNotes}
+          />
 
           {/* Quick Coordinator Contact */}
           <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
