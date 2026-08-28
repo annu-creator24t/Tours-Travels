@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Phone, Compass } from 'lucide-react';
+import { Compass, Phone, Search } from 'lucide-react';
+import { companyConfig } from '@/lib/company.config';
 
 export const Navbar: React.FC = () => {
   return (
@@ -14,10 +15,10 @@ export const Navbar: React.FC = () => {
           </div>
           <div>
             <span className="text-base sm:text-lg font-bold text-slate-900 leading-tight block">
-              Jay Maa Sheetala Tours & Travel
+              {companyConfig.name}
             </span>
             <span className="text-[10px] sm:text-xs text-blue-600 font-semibold tracking-wider uppercase">
-              Premium Fleet
+              Outstation & Fleet Rentals
             </span>
           </div>
         </Link>
@@ -29,6 +30,10 @@ export const Navbar: React.FC = () => {
           <Link href="/vehicles" className="hover:text-blue-600 transition-colors">
             Our Fleet
           </Link>
+          <Link href="/booking" className="hover:text-blue-600 transition-colors inline-flex items-center gap-1">
+            <Search className="w-3.5 h-3.5 text-slate-400" />
+            <span>Track Booking</span>
+          </Link>
           <Link href="/reviews" className="hover:text-blue-600 transition-colors">
             Reviews
           </Link>
@@ -39,11 +44,11 @@ export const Navbar: React.FC = () => {
 
         <div className="flex items-center space-x-3">
           <a
-            href="tel:+919876543210"
+            href={`tel:${companyConfig.phone}`}
             className="hidden sm:flex items-center space-x-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg transition-colors"
           >
             <Phone className="w-3.5 h-3.5 text-blue-600" />
-            <span>Call Support</span>
+            <span>{companyConfig.phoneDisplay}</span>
           </a>
           <Link
             href="/book"
@@ -58,3 +63,4 @@ export const Navbar: React.FC = () => {
 };
 
 export default Navbar;
+

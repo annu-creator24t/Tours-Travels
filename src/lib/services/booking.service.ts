@@ -24,14 +24,21 @@ export class BookingService {
       existing = await prisma.booking.findUnique({ where: { bookingRef } });
     }
 
-    // Calculate baseline estimated price if vehicle is selected
+    // Calculate baseline estimated price and validate vehicle status if vehicle is selected
     let estimatedPrice = 2500;
     if (input.vehicleId) {
       const vehicle = await prisma.vehicle.findUnique({ where: { id: input.vehicleId } });
-      if (vehicle) {
-        estimatedPrice = Number(vehicle.baseDayRate);
+      if (!vehicle) {
+        throw new Error('Selected vehicle does not exist in inventory');
       }
+      if (vehicle.status === 'INACTIVE' || vehicle.status === 'MAINTENANCE') {
+        throw new Error(
+          `Vehicle ${vehicle.name} is currently unavailable for bookings (${vehicle.status.toLowerCase()}). Please choose an alternative vehicle.`
+        );
+      }
+      estimatedPrice = Number(vehicle.baseDayRate);
     }
+
 
     return prisma.booking.create({
       data: {

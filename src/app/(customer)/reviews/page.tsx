@@ -39,7 +39,7 @@ export default async function ReviewsPage() {
       ? (
           reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews
         ).toFixed(1)
-      : '4.9';
+      : '5.0';
 
   const justdialCount = reviews.filter((r) => r.source === 'JUSTDIAL').length;
   const verifiedCount = reviews.filter(
@@ -53,14 +53,14 @@ export default async function ReviewsPage() {
         <div className="text-center max-w-2xl mx-auto mb-10">
           <div className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-blue-200/60">
             <ShieldCheck className="w-4 h-4 text-blue-600" />
-            <span>100% Genuine & Verified Reviews</span>
+            <span>Verified Customer Reviews</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Customer Ratings & Reviews
           </h1>
           <p className="mt-3 text-sm sm:text-base text-slate-600">
             Discover real experiences from travelers across outstation trips,
-            weddings, family vacations, and airport rentals.
+            family vacations, and airport rentals.
           </p>
         </div>
 
@@ -83,7 +83,7 @@ export default async function ReviewsPage() {
                   <Star key={i} className="w-4 h-4 fill-amber-500" />
                 ))}
                 <span className="text-xs text-slate-500 font-medium ml-1">
-                  ({totalReviews > 0 ? totalReviews : '120+'} ratings)
+                  ({totalReviews} verified {totalReviews === 1 ? 'review' : 'reviews'})
                 </span>
               </div>
             </div>
@@ -96,16 +96,17 @@ export default async function ReviewsPage() {
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-amber-800">Justdial Verified:</span>
                 <span className="font-bold text-slate-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                  {justdialCount > 0 ? justdialCount : '2+'} Verified
+                  {justdialCount} Verified
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-emerald-800">Direct Bookings:</span>
                 <span className="font-bold text-slate-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  {verifiedCount > 0 ? verifiedCount : '2+'} Verified
+                  {verifiedCount} Verified
                 </span>
               </div>
             </div>
+
 
             {/* Direct WhatsApp / Help Action */}
             <div className="flex flex-col items-center md:items-end justify-center pt-4 md:pt-0 md:pl-6">

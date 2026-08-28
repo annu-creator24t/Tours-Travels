@@ -52,6 +52,10 @@ interface SubmittedBookingData {
 function BookingFormContent() {
   const searchParams = useSearchParams();
   const preSelectedSlug = searchParams.get('vehicle');
+  const initialPickup = searchParams.get('pickup') || '';
+  const initialDestination = searchParams.get('destination') || '';
+  const initialDate = searchParams.get('date') || '';
+  const initialTripType = searchParams.get('tripType') || 'ONE_WAY';
 
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
@@ -61,11 +65,11 @@ function BookingFormContent() {
     customerName: '',
     customerPhone: '',
     customerEmail: '',
-    pickupLocation: '',
-    dropLocation: '',
-    pickupDatetime: '',
+    pickupLocation: initialPickup,
+    dropLocation: initialDestination,
+    pickupDatetime: initialDate,
     returnDatetime: '',
-    tripType: 'ONE_WAY',
+    tripType: initialTripType,
     passengerCount: 2,
     vehicleId: '',
     customerNotes: '',
@@ -105,6 +109,7 @@ function BookingFormContent() {
     }
     loadVehicles();
   }, [preSelectedSlug]);
+
 
   const handleCopyRef = (ref: string) => {
     navigator.clipboard.writeText(ref);
@@ -460,6 +465,32 @@ function BookingFormContent() {
                     </option>
                   ))}
                 </select>
+
+                {(() => {
+                  const selectedVehicle = vehicles.find(
+                    (v) => v.id === formData.vehicleId
+                  );
+                  if (!selectedVehicle) return null;
+                  const isOverCapacity =
+                    formData.passengerCount > selectedVehicle.seatingCapacity;
+                  return (
+                    <div className="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] space-y-1">
+                      <div className="flex items-center justify-between text-slate-700">
+                        <span>Vehicle Category: <strong>{selectedVehicle.vehicleType}</strong></span>
+                        <span>Max Capacity: <strong>{selectedVehicle.seatingCapacity} Passengers</strong></span>
+                      </div>
+                      <div className="text-slate-500">
+                        Estimated Rates: <strong>₹{Number(selectedVehicle.perKmRate)}/km</strong> (Base: ₹{Number(selectedVehicle.baseDayRate)}/day)
+                      </div>
+                      {isOverCapacity && (
+                        <p className="text-amber-700 font-semibold pt-1 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                          <span>Passenger count ({formData.passengerCount}) exceeds this vehicle&apos;s recommended capacity ({selectedVehicle.seatingCapacity} seats).</span>
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
 
               <div>
@@ -483,6 +514,7 @@ function BookingFormContent() {
               </div>
             </div>
           </div>
+
 
           {/* Section 3: Traveler Contact Details */}
           <div>

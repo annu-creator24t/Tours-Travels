@@ -56,14 +56,13 @@ export default async function VehiclesPage() {
         <div className="text-center max-w-3xl mx-auto mb-12">
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-blue-200/60">
             <ShieldCheck className="w-4 h-4 text-blue-600" />
-            <span>100% Verified Fleet & Drivers</span>
+            <span>Well-Maintained Fleet & Professional Drivers</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Our Fleet Catalog
           </h1>
           <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-            Clean, air-conditioned, and thoroughly sanitized vehicles for outstation
-            family trips, airport transfers, and corporate travel.
+            Clean, air-conditioned vehicles for outstation family trips, airport transfers, and group travel.
           </p>
         </div>
 
@@ -97,7 +96,7 @@ export default async function VehiclesPage() {
                       vehicle.reviews.reduce((acc, r) => acc + r.rating, 0) /
                       reviewCount
                     ).toFixed(1)
-                  : '4.9';
+                  : null;
 
               const isAvailable = vehicle.status === 'AVAILABLE';
 
@@ -134,7 +133,7 @@ export default async function VehiclesPage() {
                       {isAvailable ? (
                         <Badge variant="success">Available</Badge>
                       ) : (
-                        <Badge variant="warning">On Trip / Booked</Badge>
+                        <Badge variant="warning">On Trip / Reserved</Badge>
                       )}
                     </div>
                   </div>
@@ -152,13 +151,19 @@ export default async function VehiclesPage() {
                             {vehicle.brand}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold text-amber-800 flex-shrink-0">
-                          <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                          <span>{avgRating}</span>
-                          <span className="text-[10px] text-slate-400 font-normal">
-                            ({reviewCount > 0 ? reviewCount : '12+'})
+                        {avgRating ? (
+                          <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-xs font-bold text-amber-800 flex-shrink-0">
+                            <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+                            <span>{avgRating}</span>
+                            <span className="text-[10px] text-slate-400 font-normal">
+                              ({reviewCount})
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded">
+                            Verified Fleet
                           </span>
-                        </div>
+                        )}
                       </div>
 
                       {/* Key Specs Row */}

@@ -138,6 +138,9 @@ export default async function BookingStatusPage({
               {booking.status === 'CANCELLED' && (
                 <Badge variant="danger">Trip Cancelled</Badge>
               )}
+              {booking.status === 'REJECTED' && (
+                <Badge variant="danger">Request Declined</Badge>
+              )}
             </div>
           </div>
 
@@ -161,8 +164,7 @@ export default async function BookingStatusPage({
               )}
               {booking.status === 'COMPLETED' && (
                 <span>
-                  This trip has concluded. Thank you for choosing Jay Maa Sheetala Tours &
-                  Travel!
+                  This trip has concluded. Thank you for choosing {companyConfig.name}!
                 </span>
               )}
               {booking.status === 'CANCELLED' && (
@@ -171,8 +173,14 @@ export default async function BookingStatusPage({
                   rescheduling, please call our support team.
                 </span>
               )}
+              {booking.status === 'REJECTED' && (
+                <span>
+                  This booking request could not be accommodated due to schedule or fleet unavailability. Please contact our team for alternative options.
+                </span>
+              )}
             </div>
           </div>
+
 
           {/* Advance Payment Section */}
           <AdvancePaymentBox

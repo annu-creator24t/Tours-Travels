@@ -75,7 +75,7 @@ export default async function VehicleDetailPage({ params }: VehicleDetailsProps)
           vehicle.reviews.reduce((acc, r) => acc + r.rating, 0) /
           reviewCount
         ).toFixed(1)
-      : '4.9';
+      : null;
 
   return (
     <div className="bg-slate-50 min-h-screen py-8 sm:py-12 pb-24 lg:pb-12">
@@ -129,13 +129,19 @@ export default async function VehicleDetailPage({ params }: VehicleDetailsProps)
                   </h1>
                 </div>
 
-                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-sm font-bold text-amber-900 self-start sm:self-auto shadow-sm">
-                  <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
-                  <span>{avgRating} Rating</span>
-                  <span className="text-xs text-slate-500 font-normal">
-                    ({reviewCount > 0 ? `${reviewCount} verified reviews` : '12+ trips'})
-                  </span>
-                </div>
+                {avgRating ? (
+                  <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl text-sm font-bold text-amber-900 self-start sm:self-auto shadow-sm">
+                    <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                    <span>{avgRating} Rating</span>
+                    <span className="text-xs text-slate-500 font-normal">
+                      ({reviewCount} reviews)
+                    </span>
+                  </div>
+                ) : (
+                  <div className="bg-slate-100 border border-slate-200 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 self-start sm:self-auto">
+                    Verified Fleet Vehicle
+                  </div>
+                )}
               </div>
 
               {/* Specifications Matrix */}
@@ -215,23 +221,23 @@ export default async function VehicleDetailPage({ params }: VehicleDetailsProps)
                     Professional Driver Standards
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Every trip is staffed with an experienced, background-verified commercial chauffeur.
+                    Trips are staffed with experienced, licensed commercial chauffeurs.
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-slate-600 pt-2">
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
-                  <span className="font-bold text-slate-900 block mb-1">Police Verified</span>
-                  <span>100% background checked and verified commercial driver licenses.</span>
+                  <span className="font-bold text-slate-900 block mb-1">Licensed Drivers</span>
+                  <span>Verified commercial transport driver licenses.</span>
                 </div>
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
                   <span className="font-bold text-slate-900 block mb-1">Highway & Hill Experts</span>
-                  <span>Extensive driving experience on Agra Expressway, Jaipur, Shimla, Manali & Haridwar routes.</span>
+                  <span>Extensive experience across expressway and tourist routes.</span>
                 </div>
                 <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100">
                   <span className="font-bold text-slate-900 block mb-1">Courteous & Punctual</span>
-                  <span>Committed to timely doorstep reporting and polite customer service.</span>
+                  <span>Committed to timely doorstep reporting and polite service.</span>
                 </div>
               </div>
             </div>

@@ -1,8 +1,36 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Car, ShieldCheck, Star, MapPin, Calendar, Clock, ArrowRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  Car,
+  ShieldCheck,
+  MapPin,
+  Calendar,
+  ArrowRight,
+  Sparkles,
+  Compass,
+} from 'lucide-react';
+import { companyConfig } from '@/lib/company.config';
 
 export default function HomePage() {
+  const router = useRouter();
+  const [pickup, setPickup] = useState('');
+  const [destination, setDestination] = useState('');
+  const [travelDate, setTravelDate] = useState('');
+  const [tripType, setTripType] = useState('ONE_WAY');
+
+  const handleQuickInquiry = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (pickup) params.set('pickup', pickup);
+    if (destination) params.set('destination', destination);
+    if (travelDate) params.set('date', travelDate);
+    if (tripType) params.set('tripType', tripType);
+    router.push(`/book?${params.toString()}`);
+  };
+
   return (
     <div className="space-y-16 pb-20">
       {/* Hero Section */}
@@ -10,12 +38,12 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center space-x-2 bg-blue-500/20 border border-blue-400/30 px-3.5 py-1.5 rounded-full text-xs font-semibold text-blue-300">
-              <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-              <span>4.9/5 Rating on Justdial & Google Reviews</span>
+              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+              <span>Outstation Car Rental & Tour Operator</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-              Comfortable, Reliable & Premium Fleet for Every Journey
+              Comfortable, Reliable Fleet for Every Journey
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
@@ -44,7 +72,32 @@ export default function HomePage() {
           {/* Quick Search Preview Widget */}
           <div className="lg:col-span-5 bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-2xl border border-slate-100">
             <h3 className="text-xl font-bold mb-4 text-slate-900">Quick Trip Inquiry</h3>
-            <div className="space-y-3.5 text-sm">
+            <form onSubmit={handleQuickInquiry} className="space-y-3.5 text-sm">
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setTripType('ONE_WAY')}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all border ${
+                    tripType === 'ONE_WAY'
+                      ? 'bg-blue-50 text-blue-700 border-blue-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  One Way Drop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTripType('ROUND_TRIP')}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all border ${
+                    tripType === 'ROUND_TRIP'
+                      ? 'bg-blue-50 text-blue-700 border-blue-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  Round Trip
+                </button>
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Pickup Location
@@ -53,66 +106,52 @@ export default function HomePage() {
                   <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="text"
-                    placeholder="Enter pickup city/address"
+                    value={pickup}
+                    onChange={(e) => setPickup(e.target.value)}
+                    placeholder="Enter pickup city or landmark"
                     className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    readOnly
                   />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
-                  Destination
+                  Destination / Drop City
                 </label>
                 <div className="relative">
                   <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
                     type="text"
-                    placeholder="Enter destination"
+                    value={destination}
+                    onChange={(e) => setDestination(e.target.value)}
+                    placeholder="Enter destination city"
                     className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    readOnly
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">
-                    Travel Date
-                  </label>
-                  <div className="relative">
-                    <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      placeholder="Select date"
-                      className="w-full pl-9 pr-2 py-2.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      readOnly
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 mb-1">
-                    Time
-                  </label>
-                  <div className="relative">
-                    <Clock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      placeholder="Select time"
-                      className="w-full pl-9 pr-2 py-2.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      readOnly
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">
+                  Travel Date & Time
+                </label>
+                <div className="relative">
+                  <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <input
+                    type="datetime-local"
+                    value={travelDate}
+                    onChange={(e) => setTravelDate(e.target.value)}
+                    className="w-full pl-9 pr-2 py-2.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                  />
                 </div>
               </div>
 
-              <Link
-                href="/book"
-                className="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg text-sm transition-colors mt-2"
+              <button
+                type="submit"
+                className="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg text-sm transition-colors mt-4 shadow-sm"
               >
                 Proceed to Book Vehicle
-              </Link>
-            </div>
+              </button>
+            </form>
           </div>
         </div>
       </section>
@@ -137,21 +176,21 @@ export default function HomePage() {
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 mb-1">Verified Drivers</h4>
+              <h4 className="font-bold text-slate-900 mb-1">Professional Chauffeurs</h4>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Polite, licensed, and highly experienced highway drivers.
+                Polite, licensed, and experienced highway drivers for safe travel.
               </p>
             </div>
           </div>
 
           <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-start space-x-4">
             <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
-              <Star className="w-6 h-6" />
+              <Compass className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 mb-1">Transparent Pricing</h4>
+              <h4 className="font-bold text-slate-900 mb-1">Transparent Estimates</h4>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Zero hidden charges. Clear advance and trip estimates.
+                Clear per-km rates with zero hidden charges and booking reference tracking.
               </p>
             </div>
           </div>
@@ -160,3 +199,4 @@ export default function HomePage() {
     </div>
   );
 }
+

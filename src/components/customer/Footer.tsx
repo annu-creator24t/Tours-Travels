@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Compass, Phone, Mail, MapPin } from 'lucide-react';
+import { companyConfig } from '@/lib/company.config';
 
 export const Footer: React.FC = () => {
   return (
@@ -13,7 +14,7 @@ export const Footer: React.FC = () => {
                 <Compass className="w-5 h-5" />
               </div>
               <span className="text-base font-bold text-white">
-                Jay Maa Sheetala Tours & Travel
+                {companyConfig.name}
               </span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
@@ -43,8 +44,13 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/booking" className="hover:text-white transition-colors">
+                  Track Booking Status
+                </Link>
+              </li>
+              <li>
                 <Link href="/reviews" className="hover:text-white transition-colors">
-                  Customer & Justdial Reviews
+                  Customer Reviews
                 </Link>
               </li>
             </ul>
@@ -58,7 +64,7 @@ export const Footer: React.FC = () => {
               <li>Sedans (Dzire, Etios)</li>
               <li>Premium SUVs (Innova Crysta)</li>
               <li>Tempo Travellers (12 & 17 Seater)</li>
-              <li>Luxury Coaches & Buses</li>
+              <li>MUVs & Family Vehicles</li>
             </ul>
           </div>
 
@@ -69,22 +75,26 @@ export const Footer: React.FC = () => {
             <div className="space-y-2 text-xs">
               <p className="flex items-center space-x-2">
                 <Phone className="w-3.5 h-3.5 text-blue-400" />
-                <span>+91 98765 43210</span>
+                <a href={`tel:${companyConfig.phone}`} className="hover:text-white transition-colors">
+                  {companyConfig.phoneDisplay}
+                </a>
               </p>
               <p className="flex items-center space-x-2">
                 <Mail className="w-3.5 h-3.5 text-blue-400" />
-                <span>contact@tourstravels.com</span>
+                <a href={`mailto:${companyConfig.email}`} className="hover:text-white transition-colors">
+                  {companyConfig.email}
+                </a>
               </p>
               <p className="flex items-center space-x-2">
                 <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                <span>Main Office, City Center</span>
+                <span>{companyConfig.address.fullAddress}</span>
               </p>
             </div>
           </div>
         </div>
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Jay Maa Sheetala Tours & Travel. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {companyConfig.name}. All rights reserved.</p>
           <div className="flex space-x-4 mt-3 sm:mt-0">
             <Link href="/admin/login" className="hover:text-slate-400">
               Admin Portal
@@ -97,3 +107,4 @@ export const Footer: React.FC = () => {
 };
 
 export default Footer;
+
