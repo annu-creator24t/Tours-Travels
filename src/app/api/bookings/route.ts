@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
 import { BookingService } from '@/lib/services/booking.service';
 import { createBookingSchema } from '@/lib/validators/booking.schema';
+import { applyRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { ZodError } from 'zod';
 
 export async function POST(request: Request) {
+  // 1. Rate Limiting Check
+  const rateLimitResponse = applyRateLimit(
+    request,
+    'POST_bookings',
+    RATE_LIMIT_CONFIGS.BOOKING_CREATE
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const validatedData = createBookingSchema.parse(body);

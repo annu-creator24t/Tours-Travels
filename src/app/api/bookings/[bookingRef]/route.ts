@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BookingService } from '@/lib/services/booking.service';
+import { applyRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 export async function GET(
   request: Request,
@@ -33,6 +34,16 @@ export async function PATCH(
   request: Request,
   { params }: { params: { bookingRef: string } }
 ) {
+  // 1. Rate Limiting Check
+  const rateLimitResponse = applyRateLimit(
+    request,
+    'PATCH_booking_cancel',
+    RATE_LIMIT_CONFIGS.BOOKING_CANCEL
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     if (body.action === 'CANCEL' || body.status === 'CANCELLED') {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ReviewService } from '@/lib/services/review.service';
 import { createReviewSchema } from '@/lib/validators/review.schema';
+import { applyRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { ReviewSource } from '@prisma/client';
 
 export async function GET(request: Request) {
@@ -33,6 +34,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // 1. Rate Limiting Check
+  const rateLimitResponse = applyRateLimit(
+    request,
+    'POST_reviews',
+    RATE_LIMIT_CONFIGS.REVIEW_SUBMIT
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const validatedData = createReviewSchema.parse(body);

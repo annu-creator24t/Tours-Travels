@@ -1,12 +1,23 @@
 import { NextResponse } from 'next/server';
 import { BookingService } from '@/lib/services/booking.service';
 import { cancelBookingCustomerSchema } from '@/lib/validators/booking.schema';
+import { applyRateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { ZodError } from 'zod';
 
 export async function POST(
   request: Request,
   { params }: { params: { bookingRef: string } }
 ) {
+  // 1. Rate Limiting Check
+  const rateLimitResponse = applyRateLimit(
+    request,
+    'POST_booking_cancel',
+    RATE_LIMIT_CONFIGS.BOOKING_CANCEL
+  );
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
     const body = await request.json();
     const validatedData = cancelBookingCustomerSchema.parse(body);
