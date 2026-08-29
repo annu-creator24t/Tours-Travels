@@ -428,11 +428,17 @@ Varanasi & Outstation Chauffeur Services
       process.env.EMAIL_FROM ||
       '"Jay Maa Sheetala Tours & Travel" <no-reply@jaymaasheetalatours.com>';
 
-    // If SMTP is not configured, log email delivery in development/test safely
+    // If SMTP is not configured, warn in production and mock send in development/test safely
     if (!this.isConfigured()) {
-      console.log(
-        `[EmailService] [MOCK SEND] Event: ${event} | To: ${recipient} | Subject: "${subject}" | Ref: #${payload.bookingRef}`
-      );
+      if (process.env.NODE_ENV === 'production') {
+        console.warn(
+          `[EmailService] SMTP credentials not configured in production. Skipped email delivery for event "${event}" to "${recipient}".`
+        );
+      } else {
+        console.log(
+          `[EmailService] [MOCK SEND] Event: ${event} | To: ${recipient} | Subject: "${subject}" | Ref: #${payload.bookingRef}`
+        );
+      }
       return {
         success: true,
         mocked: true,

@@ -49,6 +49,20 @@ export class ModularPaymentProvider implements IPaymentGatewayProvider {
       this.keySecret;
   }
 
+  /**
+   * Indicates whether payment credentials have been configured
+   */
+  isConfigured(): boolean {
+    return Boolean(this.keyId && this.keySecret);
+  }
+
+  /**
+   * Detects if Razorpay test mode keys (rzp_test_*) are configured
+   */
+  isTestMode(): boolean {
+    return this.keyId.startsWith('rzp_test_');
+  }
+
   async createOrder(params: {
     amount: number;
     currency: string;
@@ -57,6 +71,13 @@ export class ModularPaymentProvider implements IPaymentGatewayProvider {
   }): Promise<GatewayOrderResult> {
     if (params.amount <= 0) {
       throw new Error('Order amount must be greater than zero');
+    }
+
+    // Safety guard: Alert in logs if test mode keys are active in production
+    if (process.env.NODE_ENV === 'production' && this.isTestMode()) {
+      console.warn(
+        '[PAYMENT SECURITY WARNING] Razorpay test credentials (rzp_test_*) detected in production environment.'
+      );
     }
 
     // Generate safe order ID with timestamp & high-entropy suffix
@@ -72,16 +93,16 @@ export class ModularPaymentProvider implements IPaymentGatewayProvider {
     };
   }
 
-
   /**
-   * Cryptographically verifies HMAC-SHA256 signature
+   * Cryptographically verifies HMAC-SHA256 signature.
+   * Fails safely if secret is not configured or parameters are missing.
    */
   verifySignature(params: {
     orderId: string;
     paymentId: string;
     signature: string;
   }): boolean {
-    if (!params.orderId || !params.paymentId || !params.signature) {
+    if (!params.orderId || !params.paymentId || !params.signature || !this.keySecret) {
       return false;
     }
 
@@ -101,10 +122,11 @@ export class ModularPaymentProvider implements IPaymentGatewayProvider {
   }
 
   /**
-   * Cryptographically validates Webhook signature
+   * Cryptographically validates Webhook signature.
+   * Fails safely if webhook secret is not configured or payload is missing.
    */
   verifyWebhookSignature(rawBody: string, signature: string): boolean {
-    if (!rawBody || !signature) return false;
+    if (!rawBody || !signature || !this.webhookSecret) return false;
 
     try {
       const expectedSignature = crypto
@@ -123,3 +145,4 @@ export class ModularPaymentProvider implements IPaymentGatewayProvider {
 }
 
 export const paymentGateway = new ModularPaymentProvider();
+

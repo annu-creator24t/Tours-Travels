@@ -1,9 +1,25 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const JWT_SECRET_KEY = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'dev-super-secure-jwt-secret-key-tours-and-travels-2026'
-);
+const DEV_FALLBACK_SECRET = 'dev-super-secure-jwt-secret-key-tours-and-travels-2026';
+
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        '[SECURITY ERROR] NEXTAUTH_SECRET is not configured in production environment.'
+      );
+    }
+    return new TextEncoder().encode(DEV_FALLBACK_SECRET);
+  }
+  if (process.env.NODE_ENV === 'production' && secret === DEV_FALLBACK_SECRET) {
+    throw new Error(
+      '[SECURITY ERROR] Insecure development NEXTAUTH_SECRET placeholder cannot be used in production.'
+    );
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export const AUTH_COOKIE_NAME = 'admin_session_token';
 
@@ -22,7 +38,7 @@ export async function signAdminToken(payload: AdminJwtPayload): Promise<string> 
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(JWT_SECRET_KEY);
+    .sign(getJwtSecret());
 }
 
 /**
@@ -32,7 +48,7 @@ export async function verifyAdminToken(
   token: string
 ): Promise<AdminJwtPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET_KEY);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return payload as unknown as AdminJwtPayload;
   } catch {
     return null;
