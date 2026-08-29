@@ -14,7 +14,14 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting development database seed...');
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_PRODUCTION_SEED !== 'true') {
+    console.warn(
+      '⚠️ [DB SEED] Seeding is disabled in production by default to prevent accidental data overwrites. Set ALLOW_PRODUCTION_SEED=true to override.'
+    );
+    return;
+  }
+
+  console.log('🌱 Starting database seed...');
 
   // 1. Seed Development Administrator
   const adminEmail = process.env.ADMIN_DEFAULT_EMAIL || 'admin@tourstravels.com';

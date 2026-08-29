@@ -117,16 +117,30 @@ Key environment variables:
 | `SMTP_*` | Optional SMTP configuration for transactional email dispatch |
 
 ### 4. Database Setup
+
+#### Local Development
 ```bash
-# Generate Prisma client
+# 1. Generate Prisma client
 npm run prisma:generate
 
-# Run migrations to create database schema
+# 2. Run migrations for development
 npm run prisma:migrate
 
-# Seed database with realistic fleet catalog, drivers, reviews, and admin user
+# 3. Seed database with realistic fleet catalog, drivers, reviews, and admin user
 npm run prisma:seed
 ```
+
+#### Production Deployment
+```bash
+# 1. Generate Prisma client
+npm run prisma:generate
+
+# 2. Apply pending migrations safely without reset
+npm run prisma:deploy
+# or: npx prisma migrate deploy
+```
+
+> **Connection Pooling Note:** When connecting to PostgreSQL via pooled connections (PgBouncer, Supabase transaction pooler, Neon pooler, AWS RDS Proxy), provide the pooled connection string in `DATABASE_URL`. `npx prisma migrate deploy` applies migrations sequentially and idempotently against your schema.
 
 ### 5. Running the Application
 ```bash
@@ -143,7 +157,7 @@ npm run build
 npm run start
 ```
 
-Default credentials after seeding:
+Default credentials after development seeding:
 - **Admin Portal:** `http://localhost:3000/admin/login`
 - **Email:** `admin@tourstravels.com`
 - **Password:** `Admin@123456`
@@ -152,7 +166,7 @@ Default credentials after seeding:
 
 ## Production Deployment Checklist
 
-1. **Database:** Provision a managed PostgreSQL instance (e.g., Supabase, Neon, AWS RDS, Railway) and run `npx prisma migrate deploy`.
+1. **Database:** Provision a managed PostgreSQL instance (e.g., Supabase, Neon, AWS RDS, Railway) and run `npm run prisma:deploy` (or `npx prisma migrate deploy`).
 2. **Environment:** Set `NEXTAUTH_SECRET` to a strong random 64-character secret and provide `NEXT_PUBLIC_APP_URL`.
 3. **Build:** Run `npm run build` to generate the optimized standalone Next.js bundle.
 4. **Process Manager:** Deploy to Vercel, Node.js VPS with PM2, or Docker container.
