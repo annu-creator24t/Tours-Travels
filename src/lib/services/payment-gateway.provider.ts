@@ -73,10 +73,15 @@ export class ModularPaymentProvider implements IPaymentGatewayProvider {
       throw new Error('Order amount must be greater than zero');
     }
 
-    // Safety guard: Alert in logs if test mode keys are active in production
+    // Strict Production Safety: Test keys (rzp_test_*) must NEVER run in production unless explicitly overridden
     if (process.env.NODE_ENV === 'production' && this.isTestMode()) {
+      if (process.env.ALLOW_PRODUCTION_TEST_PAYMENTS !== 'true') {
+        throw new Error(
+          '[PAYMENT SECURITY ERROR] Razorpay test credentials (rzp_test_*) are blocked in production environment. Configure live credentials (rzp_live_*).'
+        );
+      }
       console.warn(
-        '[PAYMENT SECURITY WARNING] Razorpay test credentials (rzp_test_*) detected in production environment.'
+        '[PAYMENT SECURITY WARNING] Razorpay test credentials are functioning under ALLOW_PRODUCTION_TEST_PAYMENTS override.'
       );
     }
 

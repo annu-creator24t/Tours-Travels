@@ -148,6 +148,11 @@ export class PaymentService {
         throw new Error('Booking not found during verification');
       }
 
+      // Check booking eligibility: Rejected or Cancelled bookings cannot accept payments
+      if (booking.status === 'CANCELLED' || booking.status === 'REJECTED') {
+        throw new Error(`Cannot complete payment: Booking has been ${booking.status.toLowerCase()}.`);
+      }
+
       // Check if already paid (prevent duplicate processing)
       const payment = await tx.payment.findFirst({
         where: {
@@ -158,6 +163,12 @@ export class PaymentService {
 
       if (!payment) {
         throw new Error('Payment order record not found');
+      }
+
+      // Verify payment amount matches the booking's configured advance amount
+      const expectedAdvance = Number(booking.advanceAmount || 0);
+      if (expectedAdvance <= 0 || Number(payment.amount) !== expectedAdvance) {
+        throw new Error('Payment record amount mismatch with booking advance quote.');
       }
 
       if (payment.status === PaymentStatus.PAID) {
@@ -393,6 +404,30 @@ export class PaymentService {
       }
 
       return result;
+    }
+
+    // Handle payment failed webhook event safely
+    if (eventType === 'payment.failed') {
+      const payloadObj = (event.payload as Record<string, Record<string, Record<string, unknown>>>) || {};
+      const paymentEntity = payloadObj.payment?.entity;
+      const orderId = (paymentEntity?.order_id as string) || '';
+
+      if (orderId) {
+        await prisma.payment.updateMany({
+          where: { transactionRef: orderId, status: PaymentStatus.PENDING },
+          data: {
+            status: PaymentStatus.FAILED,
+            gatewayResponse: {
+              webhookEvent: eventType,
+              gatewayPaymentId: (paymentEntity?.id as string) || undefined,
+              errorDescription: (paymentEntity?.error_description as string) || 'Payment failed at gateway',
+              receivedAt: new Date().toISOString(),
+            },
+          },
+        });
+      }
+
+      return { received: true, status: 'failed_recorded', orderId };
     }
 
     return { received: true, status: 'acknowledged', eventType };

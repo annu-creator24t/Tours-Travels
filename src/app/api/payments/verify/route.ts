@@ -39,10 +39,25 @@ export async function POST(request: Request) {
       },
     });
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : 'Payment verification failed';
+    console.error('[VerifyPayment] Error:', error instanceof Error ? error.message : error);
+
+    let customerMessage = 'Payment verification failed';
+    if (error instanceof z.ZodError) {
+      customerMessage = error.errors[0]?.message || 'Invalid payment verification parameters';
+    } else if (error instanceof Error) {
+      const msg = error.message;
+      if (
+        !msg.includes('Prisma') &&
+        !msg.includes('connect') &&
+        !msg.includes('DATABASE') &&
+        !msg.includes('password')
+      ) {
+        customerMessage = msg;
+      }
+    }
+
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: customerMessage },
       { status: 400 }
     );
   }

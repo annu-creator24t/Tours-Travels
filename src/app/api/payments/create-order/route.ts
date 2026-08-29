@@ -30,10 +30,25 @@ export async function POST(request: Request) {
       data: orderData,
     });
   } catch (error: unknown) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to create payment order';
+    console.error('[CreatePaymentOrder] Error:', error instanceof Error ? error.message : error);
+
+    let customerMessage = 'Failed to create payment order';
+    if (error instanceof z.ZodError) {
+      customerMessage = error.errors[0]?.message || 'Invalid booking reference';
+    } else if (error instanceof Error) {
+      const msg = error.message;
+      if (
+        !msg.includes('Prisma') &&
+        !msg.includes('connect') &&
+        !msg.includes('DATABASE') &&
+        !msg.includes('password')
+      ) {
+        customerMessage = msg;
+      }
+    }
+
     return NextResponse.json(
-      { success: false, error: message },
+      { success: false, error: customerMessage },
       { status: 400 }
     );
   }
