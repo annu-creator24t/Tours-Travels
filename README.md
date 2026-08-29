@@ -164,12 +164,57 @@ Default credentials after development seeding:
 
 ---
 
-## Production Deployment Checklist
+## Production Deployment Guide
 
-1. **Database:** Provision a managed PostgreSQL instance (e.g., Supabase, Neon, AWS RDS, Railway) and run `npm run prisma:deploy` (or `npx prisma migrate deploy`).
-2. **Environment:** Set `NEXTAUTH_SECRET` to a strong random 64-character secret and provide `NEXT_PUBLIC_APP_URL`.
-3. **Build:** Run `npm run build` to generate the optimized standalone Next.js bundle.
-4. **Process Manager:** Deploy to Vercel, Node.js VPS with PM2, or Docker container.
+### A. Deploying to Vercel (Recommended)
+
+1. **Import Repository**: Connect your GitHub repository (`Tours-Travels`) in the [Vercel Dashboard](https://vercel.com).
+2. **Framework Preset**: Select `Next.js`.
+3. **Build & Development Settings**:
+   - Build Command: `npm run build`
+   - Install Command: `npm install` (runs `postinstall: prisma generate` automatically)
+4. **Environment Variables**: Configure the required environment variables below.
+5. **Database Migration**: Run `npx prisma migrate deploy` in your CI/CD pipeline or deploy hook.
+
+### B. Deploying to Node.js VPS / Docker (PM2 / Standalone)
+
+```bash
+# 1. Clone & Install dependencies
+git clone https://github.com/annu-creator24t/Tours-Travels.git
+cd Tours-Travels
+npm install
+
+# 2. Configure Production Environment
+cp .env.example .env.production
+# Populate DATABASE_URL, NEXTAUTH_SECRET, NEXT_PUBLIC_APP_URL, etc.
+
+# 3. Apply database migrations
+npm run prisma:deploy
+
+# 4. Build application
+npm run build
+
+# 5. Start with PM2
+pm2 start npm --name "tours-travels" -- start
+```
+
+### Production Environment Variables Reference
+
+| Variable | Required | Description | Example / Notes |
+|---|---|---|---|
+| `NODE_ENV` | Yes | Runtime mode | `production` |
+| `DATABASE_URL` | Yes | PostgreSQL connection string (direct or pooled) | `postgresql://user:pass@host:5432/db?schema=public` |
+| `NEXTAUTH_SECRET` | Yes | Secret for signing admin JWT session tokens (32+ chars) | `openssl rand -base64 32` |
+| `NEXT_PUBLIC_APP_URL` | Yes | Canonical production domain for SEO and links | `https://jaymaasheetalatours.com` |
+| `RAZORPAY_KEY_ID` | Optional | Razorpay Live Key ID (must start with `rzp_live_`) | `rzp_live_xxxxxxxx` |
+| `RAZORPAY_KEY_SECRET` | Optional | Razorpay API Secret | Server-side only |
+| `RAZORPAY_WEBHOOK_SECRET`| Optional | Secret for verifying webhook payloads | Server-side only |
+| `SMTP_HOST` | Optional | Outgoing SMTP mail server | `smtp.gmail.com` / `smtp.mailgun.org` |
+| `SMTP_PORT` | Optional | SMTP mail server port | `587` (TLS) or `465` (SSL) |
+| `SMTP_USER` | Optional | SMTP username / email address | `contact@jaymaasheetalatours.com` |
+| `SMTP_PASS` | Optional | SMTP password or app-specific password | Server-side only |
+| `SMTP_FROM` | Optional | Formatted sender email address | `"Jay Maa Sheetala Tours" <no-reply@...>` |
+| `NEXT_PUBLIC_COMPANY_*` | Optional | Custom branding, phone, WhatsApp & address | See `.env.example` |
 
 ---
 
