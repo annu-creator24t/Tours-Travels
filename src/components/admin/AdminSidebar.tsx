@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -10,8 +11,8 @@ import {
   Users,
   Star,
   LogOut,
-  Compass,
 } from 'lucide-react';
+import { companyConfig } from '@/lib/company.config';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -38,9 +39,16 @@ export const AdminSidebar: React.FC = () => {
   return (
     <aside className="w-64 bg-slate-900 text-slate-300 min-h-screen flex flex-col justify-between p-4 border-r border-slate-800">
       <div>
-        <div className="flex items-center space-x-2 px-2 py-4 mb-6 border-b border-slate-800">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-            <Compass className="w-5 h-5" />
+        <div className="flex items-center space-x-2.5 px-2 py-4 mb-6 border-b border-slate-800">
+          <div className="relative w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 bg-slate-950 border border-slate-800">
+            <Image
+              src={companyConfig.logoUrl}
+              alt={companyConfig.name}
+              fill
+              sizes="32px"
+              className="object-contain p-0.5"
+              unoptimized
+            />
           </div>
           <div>
             <span className="text-xs font-bold text-white block leading-tight">

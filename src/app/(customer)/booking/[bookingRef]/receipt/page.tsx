@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import prisma from '@/lib/db';
 import {
   Compass,
@@ -137,9 +138,16 @@ export default async function BookingReceiptPage({
           {/* Header & Letterhead */}
           <div className="flex flex-col sm:flex-row sm:items-start justify-between pb-6 border-b-2 border-slate-900 gap-4">
             <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-                  <Compass className="w-5 h-5" />
+              <div className="flex items-center space-x-2.5">
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 bg-slate-900 border border-slate-800">
+                  <Image
+                    src={companyConfig.logoUrl}
+                    alt={companyConfig.name}
+                    fill
+                    sizes="40px"
+                    className="object-contain p-0.5"
+                    unoptimized
+                  />
                 </div>
                 <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
                   {companyConfig.name}

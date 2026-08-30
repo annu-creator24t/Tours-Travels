@@ -24,6 +24,7 @@ export interface ContactChannel {
 export interface CompanyConfig {
   name: string;
   shortName: string;
+  logoUrl: string;
   tagline: string;
   description: string;
   phone: string;
@@ -68,6 +69,7 @@ const cleanSecondary = SECONDARY_WHATSAPP.replace(/[^0-9]/g, '');
 export const companyConfig: CompanyConfig = {
   name: 'Jay Maa Sheetala Tours & Travel',
   shortName: 'JMSTT',
+  logoUrl: '/images/logo.png',
   tagline: 'Reliable Fleet & Outstation Travel Services',
   description:
     'Safe, dependable, and comfortable vehicle rentals for outstation trips, family vacations, airport transfers, and customized tour packages.',

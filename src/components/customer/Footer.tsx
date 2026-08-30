@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { Compass, Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
+import Image from 'next/image';
+import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
 
 export const Footer: React.FC = () => {
@@ -10,9 +11,16 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 pb-6 border-b border-slate-800/70">
           {/* Brand & Quick CTA */}
           <div className="space-y-2.5">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center text-white flex-shrink-0">
-                <Compass className="w-3.5 h-3.5" />
+            <div className="flex items-center space-x-2.5">
+              <div className="relative w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 bg-slate-900 border border-slate-800">
+                <Image
+                  src={companyConfig.logoUrl}
+                  alt={companyConfig.name}
+                  fill
+                  sizes="32px"
+                  className="object-contain p-0.5"
+                  unoptimized
+                />
               </div>
               <span className="text-sm font-bold text-white tracking-tight">
                 {companyConfig.name}

@@ -2,19 +2,28 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Compass, Phone, Search } from 'lucide-react';
+import Image from 'next/image';
+import { Phone, Search } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
 
 export const Navbar: React.FC = () => {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur border-b border-slate-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-md">
-            <Compass className="w-6 h-6" />
+        <Link href="/" className="flex items-center space-x-2.5 group">
+          <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0 shadow-sm border border-slate-200/80 bg-slate-950">
+            <Image
+              src={companyConfig.logoUrl}
+              alt={companyConfig.name}
+              fill
+              sizes="(max-width: 640px) 40px, 44px"
+              className="object-contain p-0.5"
+              priority
+              unoptimized
+            />
           </div>
           <div>
-            <span className="text-base sm:text-lg font-bold text-slate-900 leading-tight block">
+            <span className="text-sm sm:text-base font-extrabold text-slate-900 leading-tight block group-hover:text-blue-600 transition-colors">
               {companyConfig.name}
             </span>
             <span className="text-[10px] sm:text-xs text-blue-600 font-semibold tracking-wider uppercase">
