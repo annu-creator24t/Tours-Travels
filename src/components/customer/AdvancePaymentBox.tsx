@@ -234,8 +234,8 @@ export default function AdvancePaymentBox({
           <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider block">
             Booking Confirmed · Ref #{bookingRef}
           </span>
-          <h3 className="text-sm font-bold text-slate-900">
-            Pay Advance Deposit via UPI
+          <h3 className="text-sm sm:text-base font-bold text-slate-900">
+            Pay Advance via UPI
           </h3>
         </div>
         <div className="text-right">
@@ -373,74 +373,73 @@ export default function AdvancePaymentBox({
         </div>
 
         {/* UPI Details Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
           {/* Left: VPA and Payee Details */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">
                 Payee / Account Name
               </span>
-              <strong className="text-slate-900 text-xs block">
+              <strong className="text-slate-900 text-sm font-bold block mt-0.5">
                 {upiConfig.displayName}
               </strong>
             </div>
 
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Official UPI ID (VPA)
+                UPI ID
               </span>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <code className="bg-white border border-slate-300 font-mono font-bold text-blue-700 px-2.5 py-1.5 rounded-lg text-xs select-all">
+              <div className="flex items-center gap-1.5 mt-1">
+                <code className="bg-white border border-slate-300 font-mono font-bold text-blue-700 px-3 py-2 rounded-xl text-xs sm:text-sm select-all">
                   {upiConfig.upiId}
                 </code>
                 <button
                   type="button"
                   onClick={handleCopyUpi}
-                  className="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors"
+                  className="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs"
                   title="Copy UPI ID"
                 >
                   {copiedUpi ? (
                     <>
                       <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span className="text-[10px] text-emerald-700">Copied</span>
+                      <span className="text-emerald-700">Copied</span>
                     </>
                   ) : (
                     <>
                       <Copy className="w-3.5 h-3.5 text-slate-500" />
-                      <span className="text-[10px]">Copy</span>
+                      <span>Copy UPI ID</span>
                     </>
                   )}
                 </button>
               </div>
             </div>
 
-            <div>
+            <div className="p-3 bg-white rounded-xl border border-slate-200">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">
                 Exact Advance Amount
               </span>
-              <strong className="text-blue-700 text-sm font-extrabold">
+              <strong className="text-blue-700 text-base font-black block mt-0.5">
                 ₹{advanceNum} INR
               </strong>
             </div>
           </div>
 
-          {/* Right: Placeholder QR Box */}
-          <div className="flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-slate-200 text-center">
-            <div className="relative w-36 h-36 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shadow-xs mb-1">
+          {/* Right: Real Paytm QR Card */}
+          <div className="flex flex-col items-center justify-center p-3 bg-white rounded-2xl border border-slate-200 shadow-xs text-center">
+            <div className="relative w-48 sm:w-56 h-[300px] sm:h-[350px] rounded-xl overflow-hidden bg-slate-50">
               <Image
                 src={upiConfig.qrCodeImageUrl}
-                alt="UPI QR Code Placeholder"
+                alt="Paytm UPI QR Code — Anmol Tiwari"
                 fill
-                sizes="144px"
+                sizes="(max-width: 640px) 192px, 224px"
                 className="object-contain"
+                priority
                 unoptimized
               />
-              <div className="absolute inset-x-0 bottom-0 bg-slate-900/80 text-white text-[9px] font-bold py-0.5 tracking-wider uppercase">
-                Placeholder QR
-              </div>
             </div>
-            <span className="text-[10px] text-slate-400 font-medium">
-              Demo QR Code · Jay Maa Sheetala
+            <span className="text-xs font-bold text-slate-800 mt-2.5 flex items-center justify-center gap-1.5">
+              <QrCode className="w-4 h-4 text-blue-600" />
+              <span>Scan with any UPI app</span>
             </span>
           </div>
         </div>

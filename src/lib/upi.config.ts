@@ -2,8 +2,8 @@
  * Central UPI Payment Configuration
  * Jay Maa Sheetala Tours & Travel
  *
- * Provides configurable placeholder parameters for manual UPI payment flow.
- * No real payment gateway credentials or live UPI keys are stored in source code.
+ * Configured with the Paytm UPI QR details for advance trip payments.
+ * All payments are verified manually by admin before status transitions to PAID.
  */
 
 export interface UpiConfig {
@@ -15,17 +15,14 @@ export interface UpiConfig {
 }
 
 export const upiConfig: UpiConfig = {
-  // Placeholder UPI VPA address
-  upiId: process.env.NEXT_PUBLIC_UPI_ID || 'UPI_ID_PLACEHOLDER',
+  // Official Business UPI VPA address
+  upiId: process.env.NEXT_PUBLIC_UPI_ID || '9919379147@ptsbi',
 
-  // Registered Business Display Name
-  displayName:
-    process.env.NEXT_PUBLIC_UPI_PAYEE_NAME ||
-    'Jay Maa Sheetala Tours & Travel',
+  // Registered Payee Name on UPI QR
+  displayName: process.env.NEXT_PUBLIC_UPI_PAYEE_NAME || 'Anmol Tiwari',
 
-  // Placeholder QR Code Image path
-  qrCodeImageUrl:
-    process.env.NEXT_PUBLIC_UPI_QR_IMAGE || '/images/upi-qr-placeholder.png',
+  // Real Paytm UPI QR Code Image path
+  qrCodeImageUrl: process.env.NEXT_PUBLIC_UPI_QR_IMAGE || '/images/upi-qr.jpg',
 
   // Optional Merchant Category Code
   merchantCode: process.env.NEXT_PUBLIC_UPI_MCC || '4722',
