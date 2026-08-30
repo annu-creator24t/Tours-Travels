@@ -22,7 +22,9 @@ export async function GET(
       include: {
         vehicle: { include: { images: true } },
         driver: true,
-        payments: true,
+        payments: {
+          orderBy: { createdAt: 'desc' },
+        },
         managedByAdmin: { select: { name: true, email: true } },
       },
     });

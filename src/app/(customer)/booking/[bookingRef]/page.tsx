@@ -92,11 +92,23 @@ export default async function BookingStatusPage({
     booking.vehicle?.images.find((img) => img.isPrimary)?.imageUrl ||
     booking.vehicle?.images[0]?.imageUrl;
 
-  const isAdvancePaid = booking.payments.some(
+  const paidPayment = booking.payments.find(
     (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
   );
+  const pendingPayment = booking.payments.find(
+    (p) => p.paymentType === 'ADVANCE' && p.status === 'PENDING'
+  );
+  const failedPayment = booking.payments.find(
+    (p) => p.paymentType === 'ADVANCE' && p.status === 'FAILED'
+  );
+
+  const isAdvancePaid = Boolean(paidPayment);
   const hasFailedPayment =
-    !isAdvancePaid && booking.payments.some((p) => p.status === 'FAILED');
+    !isAdvancePaid && !pendingPayment && Boolean(failedPayment);
+  const failedReason =
+    (failedPayment?.gatewayResponse as Record<string, unknown>)
+      ?.rejectionReason as string | undefined;
+
   const hasAdvanceRequired = Boolean(
     booking.advanceAmount && Number(booking.advanceAmount) > 0
   );
@@ -332,13 +344,11 @@ export default async function BookingStatusPage({
             advanceAmount={advanceAmountNum}
             balanceAmount={remainingBalanceNum}
             isAdvancePaid={isAdvancePaid}
+            paidTransactionRef={paidPayment?.transactionRef}
+            pendingTransactionRef={pendingPayment?.transactionRef}
             hasFailedPayment={hasFailedPayment}
+            failedReason={failedReason}
             whatsappUrl={whatsappUrl}
-            paidTransactionRef={
-              booking.payments.find(
-                (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
-              )?.transactionRef
-            }
           />
 
 

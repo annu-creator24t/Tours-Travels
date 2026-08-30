@@ -11,11 +11,307 @@ export interface VerifyPaymentInput {
   rawResponse?: Record<string, unknown>;
 }
 
+export interface SubmitUtrInput {
+  bookingRef: string;
+  utr: string;
+  customerNotes?: string;
+}
 
 export class PaymentService {
   /**
-   * Generates an advance payment order for a confirmed booking.
-   * Payment is ONLY available after the booking has been confirmed by admin with an advance quote.
+   * Submits a customer-provided UPI UTR / Transaction Reference for a confirmed booking.
+   * - Validates booking existence and confirmed status.
+   * - Validates advance amount is set and not already paid.
+   * - Enforces non-empty, alphanumeric, standard length UTR.
+   * - Prevents duplicate UTR submissions across all bookings.
+   * - Creates or updates the payment record in PENDING status.
+   * - NEVER marks payment as PAID automatically.
+   */
+  static async submitUtrPayment(input: SubmitUtrInput) {
+    const { bookingRef, utr, customerNotes } = input;
+
+    // 1. Sanitize & validate UTR format
+    const sanitizedUtr = utr ? utr.trim().toUpperCase() : '';
+    if (!sanitizedUtr) {
+      throw new Error('Please provide a valid UTR / Transaction Reference number.');
+    }
+
+    if (sanitizedUtr.length < 6 || sanitizedUtr.length > 35) {
+      throw new Error('UTR / Transaction ID must be between 6 and 35 characters.');
+    }
+
+    // Standard alphanumeric and hyphen/slash check
+    if (!/^[A-Z0-9\-_]+$/i.test(sanitizedUtr)) {
+      throw new Error('UTR / Transaction ID must contain only alphanumeric characters, dashes, or underscores.');
+    }
+
+    // 2. Fetch booking
+    const booking = await prisma.booking.findUnique({
+      where: { bookingRef: bookingRef.trim() },
+      include: {
+        payments: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw new Error(`Booking #${bookingRef} not found.`);
+    }
+
+    if (booking.status !== 'CONFIRMED') {
+      throw new Error(
+        'Payment submission is only available for confirmed bookings. Please await admin confirmation.'
+      );
+    }
+
+    const advanceAmount = Number(booking.advanceAmount || 0);
+    if (advanceAmount <= 0) {
+      throw new Error(
+        'No advance payment quote has been set by the coordinator for this booking.'
+      );
+    }
+
+    // 3. Check if advance payment is already PAID
+    const existingPaid = booking.payments.find(
+      (p) => p.paymentType === PaymentType.ADVANCE && p.status === PaymentStatus.PAID
+    );
+    if (existingPaid) {
+      throw new Error('Advance payment for this booking has already been verified and marked as PAID.');
+    }
+
+    // 4. Duplicate UTR check: Ensure this UTR is not already used in any OTHER payment record
+    const existingUtrPayment = await prisma.payment.findFirst({
+      where: {
+        transactionRef: sanitizedUtr,
+        status: { in: [PaymentStatus.PAID, PaymentStatus.PENDING, PaymentStatus.PROCESSING] },
+      },
+      include: { booking: true },
+    });
+
+    if (existingUtrPayment && existingUtrPayment.bookingId !== booking.id) {
+      throw new Error(
+        `This UTR reference (${sanitizedUtr}) has already been registered for another booking. Please verify your transaction receipt.`
+      );
+    }
+
+    // 5. Atomic Upsert of pending payment record
+    const existingPendingPayment = booking.payments.find(
+      (p) => p.paymentType === PaymentType.ADVANCE && p.status === PaymentStatus.PENDING
+    );
+
+    let paymentRecord;
+    const metadata: Prisma.InputJsonObject = {
+      utr: sanitizedUtr,
+      submittedAt: new Date().toISOString(),
+      customerName: booking.customerName,
+      customerPhone: booking.customerPhone,
+      customerNotes: customerNotes?.trim() || null,
+      submissionType: 'MANUAL_UPI_UTR',
+    };
+
+    if (existingPendingPayment) {
+      paymentRecord = await prisma.payment.update({
+        where: { id: existingPendingPayment.id },
+        data: {
+          transactionRef: sanitizedUtr,
+          amount: advanceAmount,
+          status: PaymentStatus.PENDING,
+          gatewayName: 'MANUAL_UPI',
+          gatewayResponse: metadata,
+        },
+      });
+    } else {
+      paymentRecord = await prisma.payment.create({
+        data: {
+          bookingId: booking.id,
+          transactionRef: sanitizedUtr,
+          amount: advanceAmount,
+          paymentType: PaymentType.ADVANCE,
+          status: PaymentStatus.PENDING,
+          gatewayName: 'MANUAL_UPI',
+          gatewayResponse: metadata,
+        },
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Payment proof submitted successfully. Your transaction will be verified by our operations team.',
+      payment: {
+        id: paymentRecord.id,
+        bookingRef: booking.bookingRef,
+        transactionRef: paymentRecord.transactionRef,
+        amount: Number(paymentRecord.amount),
+        status: paymentRecord.status,
+        createdAt: paymentRecord.createdAt,
+      },
+    };
+  }
+
+  /**
+   * Admin: Verifies a submitted manual UPI payment and marks it as PAID.
+   * - Performs atomic database transaction.
+   * - Recalculates booking balanceAmount.
+   * - Dispatches payment success email.
+   */
+  static async verifyPaymentByAdmin(paymentId: string, adminId?: string, adminNotes?: string) {
+    const result = await prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({
+        where: { id: paymentId },
+        include: {
+          booking: {
+            include: {
+              vehicle: true,
+              driver: true,
+              payments: true,
+            },
+          },
+        },
+      });
+
+      if (!payment) {
+        throw new Error('Payment record not found.');
+      }
+
+      if (payment.status === PaymentStatus.PAID) {
+        return {
+          success: true,
+          message: 'Payment is already marked as PAID.',
+          payment,
+          booking: payment.booking,
+          newlyVerified: false,
+        };
+      }
+
+      if (payment.booking.status === 'CANCELLED' || payment.booking.status === 'REJECTED') {
+        throw new Error(`Cannot verify payment for a ${payment.booking.status.toLowerCase()} booking.`);
+      }
+
+      const existingResponse =
+        (payment.gatewayResponse as Record<string, unknown>) || {};
+
+      const updatedPayment = await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: PaymentStatus.PAID,
+          gatewayResponse: {
+            ...existingResponse,
+            verifiedByAdminId: adminId || 'ADMIN',
+            verifiedAt: new Date().toISOString(),
+            adminVerificationNotes: adminNotes || null,
+          } as Prisma.InputJsonObject,
+        },
+      });
+
+      // Recalculate booking balance
+      const totalPaid = await tx.payment.aggregate({
+        where: {
+          bookingId: payment.bookingId,
+          status: PaymentStatus.PAID,
+        },
+        _sum: { amount: true },
+      });
+
+      const totalPaidSum = Number(totalPaid._sum.amount || 0);
+      const finalPrice = Number(payment.booking.finalPrice || payment.booking.estimatedPrice);
+      const newBalance = Math.max(0, finalPrice - totalPaidSum);
+
+      const updatedBooking = await tx.booking.update({
+        where: { id: payment.bookingId },
+        data: {
+          balanceAmount: newBalance,
+          status: 'CONFIRMED',
+        },
+        include: {
+          vehicle: true,
+          driver: true,
+          payments: true,
+        },
+      });
+
+      return {
+        success: true,
+        message: 'Payment verified and marked as PAID successfully.',
+        payment: updatedPayment,
+        booking: updatedBooking,
+        balanceRemaining: newBalance,
+        newlyVerified: true,
+      };
+    });
+
+    // Dispatch non-blocking email notification if newly verified
+    if (result.newlyVerified && result.booking) {
+      EmailService.sendPaymentSuccess({
+        bookingRef: result.booking.bookingRef,
+        customerName: result.booking.customerName,
+        customerEmail: result.booking.customerEmail,
+        customerPhone: result.booking.customerPhone,
+        vehicleName: result.booking.vehicle?.name,
+        vehicleType: result.booking.vehicle?.vehicleType,
+        pickupLocation: result.booking.pickupLocation,
+        dropLocation: result.booking.dropLocation,
+        pickupDatetime: result.booking.pickupDatetime,
+        returnDatetime: result.booking.returnDatetime,
+        status: 'CONFIRMED',
+        finalPrice: result.booking.finalPrice || result.booking.estimatedPrice,
+        advanceAmount: result.payment.amount,
+        balanceAmount: result.balanceRemaining,
+        isAdvancePaid: true,
+        paymentRef: result.payment.transactionRef || result.payment.id,
+      }).catch((err) => {
+        console.error('[PaymentService] Failed to dispatch payment success email:', err);
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Admin: Rejects an invalid or unverified submitted payment.
+   * - Marks payment status as FAILED.
+   * - Stores rejection reason in gatewayResponse.
+   * - Booking remains CONFIRMED so customer can submit a corrected UTR.
+   */
+  static async rejectPaymentByAdmin(paymentId: string, reason?: string, adminId?: string) {
+    const payment = await prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: { booking: true },
+    });
+
+    if (!payment) {
+      throw new Error('Payment record not found.');
+    }
+
+    if (payment.status === PaymentStatus.PAID) {
+      throw new Error('Cannot reject a payment that has already been verified as PAID.');
+    }
+
+    const existingResponse =
+      (payment.gatewayResponse as Record<string, unknown>) || {};
+
+    const updatedPayment = await prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: PaymentStatus.FAILED,
+        gatewayResponse: {
+          ...existingResponse,
+          rejectedByAdminId: adminId || 'ADMIN',
+          rejectedAt: new Date().toISOString(),
+          rejectionReason: reason || 'Payment proof could not be verified in bank records.',
+        } as Prisma.InputJsonObject,
+      },
+    });
+
+    return {
+      success: true,
+      message: 'Payment rejected. Customer can now submit a corrected payment reference.',
+      payment: updatedPayment,
+    };
+  }
+
+  /**
+   * Generates an advance payment order placeholder for a confirmed booking.
    */
   static async createAdvanceOrder(bookingRef: string) {
     const booking = await prisma.booking.findUnique({
@@ -29,14 +325,12 @@ export class PaymentService {
       throw new Error('Booking not found');
     }
 
-    // 1. Availability check: Booking must be CONFIRMED
     if (booking.status !== 'CONFIRMED') {
       throw new Error(
         'Advance payment is only available for confirmed bookings. Please wait for admin approval.'
       );
     }
 
-    // 2. Advance amount check
     const advanceAmount = Number(booking.advanceAmount || 0);
     if (advanceAmount <= 0) {
       throw new Error(
@@ -51,7 +345,6 @@ export class PaymentService {
       );
     }
 
-    // 3. Duplicate payment prevention: Check if already paid
     const existingPaid = booking.payments.find(
       (p) => p.paymentType === PaymentType.ADVANCE && p.status === PaymentStatus.PAID
     );
@@ -60,7 +353,6 @@ export class PaymentService {
       throw new Error('Advance payment for this booking has already been completed.');
     }
 
-    // 4. Create Gateway Order
     const gatewayOrder = await paymentGateway.createOrder({
       amount: advanceAmount,
       currency: 'INR',
@@ -72,7 +364,6 @@ export class PaymentService {
       },
     });
 
-    // 5. Store / Upsert Pending Payment record in Database
     const existingPendingPayment = booking.payments.find(
       (p) => p.paymentType === PaymentType.ADVANCE && p.status === PaymentStatus.PENDING
     );
@@ -116,12 +407,10 @@ export class PaymentService {
 
   /**
    * Cryptographically verifies payment signature on backend and updates records safely.
-   * NEVER marks payment as paid based only on client response without cryptographic check.
    */
   static async verifyPayment(input: VerifyPaymentInput) {
     const { bookingRef, orderId, paymentId, signature, rawResponse } = input;
 
-    // 1. Cryptographic HMAC verification
     const isValid = paymentGateway.verifySignature({
       orderId,
       paymentId,
@@ -129,7 +418,6 @@ export class PaymentService {
     });
 
     if (!isValid) {
-      // Mark matching payment record as FAILED if invalid signature
       await prisma.payment.updateMany({
         where: { transactionRef: orderId, status: PaymentStatus.PENDING },
         data: { status: PaymentStatus.FAILED },
@@ -137,7 +425,6 @@ export class PaymentService {
       throw new Error('Payment verification failed: Invalid signature');
     }
 
-    // 2. Atomic Transaction: Record payment & update booking
     const result = await prisma.$transaction(async (tx) => {
       const booking = await tx.booking.findUnique({
         where: { bookingRef },
@@ -148,12 +435,10 @@ export class PaymentService {
         throw new Error('Booking not found during verification');
       }
 
-      // Check booking eligibility: Rejected or Cancelled bookings cannot accept payments
       if (booking.status === 'CANCELLED' || booking.status === 'REJECTED') {
         throw new Error(`Cannot complete payment: Booking has been ${booking.status.toLowerCase()}.`);
       }
 
-      // Check if already paid (prevent duplicate processing)
       const payment = await tx.payment.findFirst({
         where: {
           bookingId: booking.id,
@@ -165,7 +450,6 @@ export class PaymentService {
         throw new Error('Payment order record not found');
       }
 
-      // Verify payment amount matches the booking's configured advance amount
       const expectedAdvance = Number(booking.advanceAmount || 0);
       if (expectedAdvance <= 0 || Number(payment.amount) !== expectedAdvance) {
         throw new Error('Payment record amount mismatch with booking advance quote.');
@@ -175,7 +459,6 @@ export class PaymentService {
         return { success: true, message: 'Payment already processed', payment, booking, newlyVerified: false };
       }
 
-      // Update payment record to PAID
       const updatedPayment = await tx.payment.update({
         where: { id: payment.id },
         data: {
@@ -189,7 +472,6 @@ export class PaymentService {
         },
       });
 
-      // Re-calculate balance on booking
       const totalPaid = await tx.payment.aggregate({
         where: {
           bookingId: booking.id,
@@ -220,7 +502,6 @@ export class PaymentService {
       };
     });
 
-    // Dispatch non-blocking payment success email if newly verified
     if (result.newlyVerified && result.booking) {
       EmailService.sendPaymentSuccess({
         bookingRef: result.booking.bookingRef,
@@ -253,11 +534,9 @@ export class PaymentService {
   }
 
   /**
-   * Processes gateway webhook event with cryptographic verification,
-   * amount check, idempotency, and atomic transaction updates.
+   * Processes gateway webhook event with cryptographic verification.
    */
   static async handleWebhook(rawBody: string, signature: string) {
-    // 1. Verify Webhook Signature
     const isValid = paymentGateway.verifyWebhookSignature(rawBody, signature);
     if (!isValid) {
       throw new Error('Unauthorized webhook: Signature verification failed');
@@ -272,7 +551,6 @@ export class PaymentService {
 
     const eventType = (event.event as string) || '';
 
-    // Handle payment captured / order paid webhook events
     if (eventType === 'payment.captured' || eventType === 'order.paid' || eventType === 'payment.authorized') {
       const payloadObj = (event.payload as Record<string, Record<string, Record<string, unknown>>>) || {};
       const paymentEntity = payloadObj.payment?.entity;
@@ -286,7 +564,6 @@ export class PaymentService {
       }
 
       const result = await prisma.$transaction(async (tx) => {
-        // Find matching pending payment record
         const payment = await tx.payment.findFirst({
           where: { transactionRef: orderId },
           include: { booking: { include: { vehicle: true } } },
@@ -296,7 +573,6 @@ export class PaymentService {
           throw new Error(`Payment order record with reference ${orderId} not found`);
         }
 
-        // Idempotency: If already marked as PAID, acknowledge without re-processing
         if (payment.status === PaymentStatus.PAID) {
           return {
             received: true,
@@ -306,10 +582,8 @@ export class PaymentService {
           };
         }
 
-        // Amount verification: Validate webhook amount matches expected advance amount
         if (paymentEntity?.amount !== undefined) {
           const rawAmount = Number(paymentEntity.amount);
-          // Gateways like Razorpay send amount in smallest currency unit (paise)
           const parsedAmount = rawAmount > Number(payment.amount) * 10 ? rawAmount / 100 : rawAmount;
 
           if (parsedAmount !== Number(payment.amount)) {
@@ -332,7 +606,6 @@ export class PaymentService {
           }
         }
 
-        // Mark payment as PAID
         const updatedPayment = await tx.payment.update({
           where: { id: payment.id },
           data: {
@@ -347,7 +620,6 @@ export class PaymentService {
           },
         });
 
-        // Recalculate booking balance
         const totalPaid = await tx.payment.aggregate({
           where: {
             bookingId: payment.bookingId,
@@ -406,7 +678,6 @@ export class PaymentService {
       return result;
     }
 
-    // Handle payment failed webhook event safely
     if (eventType === 'payment.failed') {
       const payloadObj = (event.payload as Record<string, Record<string, Record<string, unknown>>>) || {};
       const paymentEntity = payloadObj.payment?.entity;
@@ -432,5 +703,4 @@ export class PaymentService {
 
     return { received: true, status: 'acknowledged', eventType };
   }
-
 }

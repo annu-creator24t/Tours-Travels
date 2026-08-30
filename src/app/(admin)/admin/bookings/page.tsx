@@ -5,30 +5,21 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import {
   Clock,
   CheckCircle2,
-  XCircle,
   AlertTriangle,
   Loader2,
   Search,
-  User,
-  Phone,
-  Car,
-  MapPin,
-  Calendar,
   IndianRupee,
   Edit,
   X,
-  UserCheck,
   Check,
   Ban,
-  Mail,
   ShieldCheck,
-  MessageCircle,
-  PhoneCall,
+  QrCode,
+  ArrowRight,
   ExternalLink,
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { BookingStatus, TripType } from '@prisma/client';
-import { companyConfig } from '@/lib/company.config';
 
 interface VehicleOption {
   id: string;
@@ -55,6 +46,7 @@ interface PaymentRecord {
   paymentType: string;
   status: string;
   gatewayName: string;
+  gatewayResponse?: Record<string, unknown> | null;
   createdAt: string;
 }
 
@@ -91,6 +83,7 @@ export default function AdminBookingsPage() {
   const [drivers, setDrivers] = useState<DriverOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -159,6 +152,83 @@ export default function AdminBookingsPage() {
     });
   };
 
+  const handleVerifyPayment = async (paymentId: string) => {
+    setProcessingPaymentId(paymentId);
+    setModalError(null);
+    setErrorMessage(null);
+    try {
+      const res = await fetch(`/api/admin/payments/${paymentId}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminNotes: 'Verified via admin console' }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to verify payment');
+      }
+
+      setSuccessMessage('Payment successfully verified and marked as PAID! Booking balance updated.');
+      await loadData();
+
+      // Refresh selected booking in modal
+      if (selectedBooking) {
+        const updatedBookingRes = await fetch(`/api/admin/bookings/${selectedBooking.id}`);
+        const updatedBookingData = await updatedBookingRes.json();
+        if (updatedBookingRes.ok && updatedBookingData.success) {
+          setSelectedBooking(updatedBookingData.data);
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error verifying payment';
+      setModalError(msg);
+      setErrorMessage(msg);
+    } finally {
+      setProcessingPaymentId(null);
+    }
+  };
+
+  const handleRejectPayment = async (paymentId: string) => {
+    const reason = window.prompt(
+      'Enter rejection reason (optional):',
+      'Payment transaction reference not found in bank statement.'
+    );
+    if (reason === null) return; // User cancelled prompt
+
+    setProcessingPaymentId(paymentId);
+    setModalError(null);
+    setErrorMessage(null);
+    try {
+      const res = await fetch(`/api/admin/payments/${paymentId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to reject payment');
+      }
+
+      setSuccessMessage('Payment rejected. Customer can now re-submit a valid UTR reference.');
+      await loadData();
+
+      if (selectedBooking) {
+        const updatedBookingRes = await fetch(`/api/admin/bookings/${selectedBooking.id}`);
+        const updatedBookingData = await updatedBookingRes.json();
+        if (updatedBookingRes.ok && updatedBookingData.success) {
+          setSelectedBooking(updatedBookingData.data);
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error rejecting payment';
+      setModalError(msg);
+      setErrorMessage(msg);
+    } finally {
+      setProcessingPaymentId(null);
+    }
+  };
+
   const handleModalSubmit = async (e?: React.FormEvent, overrideStatus?: BookingStatus) => {
     if (e) e.preventDefault();
     if (!selectedBooking) return;
@@ -217,7 +287,8 @@ export default function AdminBookingsPage() {
       b.customerPhone.includes(searchTerm) ||
       (b.customerEmail && b.customerEmail.toLowerCase().includes(searchTerm.toLowerCase())) ||
       b.pickupLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      b.dropLocation.toLowerCase().includes(searchTerm.toLowerCase());
+      b.dropLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (b.payments && b.payments.some((p) => p.transactionRef?.toLowerCase().includes(searchTerm.toLowerCase())));
     return matchesStatus && matchesSearch;
   });
 
@@ -225,7 +296,7 @@ export default function AdminBookingsPage() {
     <>
       <AdminHeader
         title="Bookings & Dispatch Management"
-        subtitle="Review inquiries, approve quotes, assign vehicles/drivers, and track trip lifecycles."
+        subtitle="Review inquiries, verify UPI advance payments, assign fleet/drivers, and track trip lifecycles."
       />
 
       <main className="p-6 space-y-6">
@@ -280,7 +351,7 @@ export default function AdminBookingsPage() {
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search ref, customer, phone, route..."
+              placeholder="Search ref, customer, phone, UTR..."
               className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
             />
           </div>
@@ -312,16 +383,20 @@ export default function AdminBookingsPage() {
                     <th className="py-3.5 px-4">Customer Details</th>
                     <th className="py-3.5 px-4">Route & Dates</th>
                     <th className="py-3.5 px-4">Allocated Fleet & Driver</th>
-                    <th className="py-3.5 px-4">Quote & Payment</th>
+                    <th className="py-3.5 px-4">Quote & UPI Advance</th>
                     <th className="py-3.5 px-4">Status</th>
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredBookings.map((b) => {
-                    const isAdvancePaid = b.payments?.some(
+                    const paidPayment = b.payments?.find(
                       (p) => p.paymentType === 'ADVANCE' && p.status === 'PAID'
                     );
+                    const pendingPayment = b.payments?.find(
+                      (p) => p.paymentType === 'ADVANCE' && p.status === 'PENDING'
+                    );
+                    const isAdvancePaid = Boolean(paidPayment);
 
                     return (
                       <tr key={b.id} className="hover:bg-slate-50/70 transition-colors">
@@ -396,15 +471,33 @@ export default function AdminBookingsPage() {
                             ₹{b.finalPrice ? Number(b.finalPrice) : Number(b.estimatedPrice)}
                           </div>
                           {isAdvancePaid ? (
-                            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 py-0.5 rounded inline-block">
-                              Advance Paid (₹{Number(b.advanceAmount)})
-                            </span>
+                            <div className="mt-1">
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 font-semibold px-1.5 py-0.5 rounded inline-flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>Advance Paid (₹{Number(b.advanceAmount)})</span>
+                              </span>
+                              {paidPayment?.transactionRef && (
+                                <span className="text-[10px] font-mono text-slate-500 block mt-0.5">
+                                  UTR: {paidPayment.transactionRef}
+                                </span>
+                              )}
+                            </div>
+                          ) : pendingPayment ? (
+                            <div className="mt-1">
+                              <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-1 border border-amber-300">
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                <span>UTR Submitted (Verify)</span>
+                              </span>
+                              <span className="text-[10px] font-mono font-bold text-amber-800 block mt-0.5">
+                                {pendingPayment.transactionRef}
+                              </span>
+                            </div>
                           ) : b.advanceAmount && Number(b.advanceAmount) > 0 ? (
                             <span className="text-[10px] text-amber-700 block font-medium">
                               Advance Due: ₹{Number(b.advanceAmount)}
                             </span>
                           ) : (
-                            <span className="text-[10px] text-slate-400 block">Payment: Pending</span>
+                            <span className="text-[10px] text-slate-400 block">Payment: Pending Quote</span>
                           )}
                         </td>
 
@@ -447,7 +540,7 @@ export default function AdminBookingsPage() {
         </div>
       </main>
 
-      {/* Manage Booking Modal */}
+      {/* Manage Booking & Payment Modal */}
       {selectedBooking && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl my-8">
@@ -457,7 +550,7 @@ export default function AdminBookingsPage() {
                   Booking #{selectedBooking.bookingRef}
                 </span>
                 <h3 className="text-lg font-bold text-slate-900">
-                  Manage Booking, Driver & Quote
+                  Manage Booking, Driver & Payment Verification
                 </h3>
               </div>
               <button
@@ -541,6 +634,123 @@ export default function AdminBookingsPage() {
                 </button>
               </div>
             )}
+
+            {/* UPI & Payment Verification Ledger Box */}
+            <div className="bg-blue-50/50 rounded-xl border border-blue-200/80 p-4 mb-5 space-y-3 text-xs">
+              <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                <div className="flex items-center gap-2 font-bold text-blue-900">
+                  <QrCode className="w-4 h-4 text-blue-600" />
+                  <span>Manual UPI Payments & Verification</span>
+                </div>
+                <span className="text-[11px] text-slate-500">
+                  Advance Quote: <strong>₹{Number(selectedBooking.advanceAmount || 0)}</strong>
+                </span>
+              </div>
+
+              {(!selectedBooking.payments || selectedBooking.payments.length === 0) ? (
+                <div className="py-2 text-center text-slate-500 italic text-[11px]">
+                  No payment transactions or UTR proofs submitted yet for this booking.
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {selectedBooking.payments.map((p) => {
+                    const isPending = p.status === 'PENDING';
+                    const isPaid = p.status === 'PAID';
+                    const isFailed = p.status === 'FAILED';
+
+                    return (
+                      <div
+                        key={p.id}
+                        className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                          isPaid
+                            ? 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                            : isPending
+                            ? 'bg-amber-50 border-amber-300 text-amber-950'
+                            : 'bg-rose-50/80 border-rose-200 text-rose-950'
+                        }`}
+                      >
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-900">
+                              ₹{Number(p.amount)} INR
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                isPaid
+                                  ? 'bg-emerald-600 text-white'
+                                  : isPending
+                                  ? 'bg-amber-500 text-white'
+                                  : 'bg-rose-600 text-white'
+                              }`}
+                            >
+                              {p.status}
+                            </span>
+                            <span className="text-[10px] text-slate-500">
+                              ({p.gatewayName})
+                            </span>
+                          </div>
+
+                          <div className="text-[11px]">
+                            <span className="text-slate-500">Submitted UTR / Ref: </span>
+                            <strong className="font-mono text-slate-900 font-bold">
+                              {p.transactionRef || 'N/A'}
+                            </strong>
+                          </div>
+
+                          <div className="text-[10px] text-slate-400">
+                            Submitted on: {new Date(p.createdAt).toLocaleString('en-IN')}
+                          </div>
+
+                          {isFailed && p.gatewayResponse && (
+                            <div className="text-[10px] text-rose-700 italic">
+                              Reason: {(p.gatewayResponse as Record<string, unknown>).rejectionReason as string || 'Unverified'}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Admin Action Buttons for Payment */}
+                        <div className="flex items-center gap-2">
+                          {isPending && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleVerifyPayment(p.id)}
+                                disabled={processingPaymentId === p.id}
+                                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] flex items-center gap-1 shadow-xs transition-colors"
+                              >
+                                {processingPaymentId === p.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Check className="w-3 h-3" />
+                                )}
+                                <span>Verify & Mark PAID</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleRejectPayment(p.id)}
+                                disabled={processingPaymentId === p.id}
+                                className="bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white font-bold px-2.5 py-1.5 rounded-lg text-[11px] flex items-center gap-1 shadow-xs transition-colors"
+                              >
+                                <Ban className="w-3 h-3" />
+                                <span>Reject</span>
+                              </button>
+                            </>
+                          )}
+
+                          {isPaid && (
+                            <span className="text-xs font-bold text-emerald-800 flex items-center gap-1">
+                              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                              <span>Verified</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             <form onSubmit={(e) => handleModalSubmit(e)} className="space-y-4 text-xs">
               {/* Status Transition Selector */}
@@ -665,7 +875,7 @@ export default function AdminBookingsPage() {
                   onChange={(e) =>
                     setModalFormData({ ...modalFormData, adminNotes: e.target.value })
                   }
-                  placeholder="e.g. Spoke with client. Driver Rajesh assigned. 1000 advance received via UPI."
+                  placeholder="e.g. Spoke with client. Driver Rajesh assigned. Advance verified via UPI."
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
                 />
               </div>

@@ -163,7 +163,9 @@ export class BookingService {
       include: {
         vehicle: true,
         driver: true,
-        payments: true,
+        payments: {
+          orderBy: { createdAt: 'desc' },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

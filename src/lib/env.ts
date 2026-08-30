@@ -12,6 +12,11 @@ const envSchema = z.object({
   NEXTAUTH_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default('http://localhost:3000'),
 
+  // Manual UPI Gateway
+  NEXT_PUBLIC_UPI_ID: z.string().optional(),
+  NEXT_PUBLIC_UPI_PAYEE_NAME: z.string().optional(),
+  NEXT_PUBLIC_UPI_QR_IMAGE: z.string().optional(),
+
   // Payment Gateway
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
