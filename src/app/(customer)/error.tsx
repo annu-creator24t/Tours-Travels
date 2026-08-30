@@ -48,23 +48,33 @@ export default function CustomerError({ error, reset }: CustomerErrorProps) {
           </Link>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-center gap-4 text-xs text-slate-500">
+        <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center justify-center gap-3 text-xs text-slate-500">
           <a
             href={`tel:${companyConfig.phone}`}
             className="text-blue-600 hover:underline font-semibold inline-flex items-center gap-1"
+            title="Helpline 1"
           >
             <PhoneCall className="w-3.5 h-3.5" />
-            <span>Call {companyConfig.phoneDisplay}</span>
+            <span>{companyConfig.phoneDisplay}</span>
           </a>
-          <span className="hidden sm:inline text-slate-300">•</span>
+          <span className="text-slate-300">•</span>
           <a
-            href={`https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}`}
+            href={`tel:${companyConfig.phone2}`}
+            className="text-blue-600 hover:underline font-semibold inline-flex items-center gap-1"
+            title="Helpline 2"
+          >
+            <PhoneCall className="w-3.5 h-3.5" />
+            <span>{companyConfig.phone2Display}</span>
+          </a>
+          <span className="text-slate-300">•</span>
+          <a
+            href={companyConfig.contacts[0].whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-600 hover:underline font-semibold inline-flex items-center gap-1"
           >
             <MessageCircle className="w-3.5 h-3.5" />
-            <span>WhatsApp Support</span>
+            <span>WhatsApp</span>
           </a>
         </div>
       </div>

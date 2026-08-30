@@ -483,23 +483,31 @@ export default async function BookingStatusPage({
           {/* Quick Coordinator Contact */}
           <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
             <span className="text-slate-500">Have questions regarding this trip?</span>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-xl transition-colors"
+                className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-3.5 py-2 rounded-xl transition-colors"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>WhatsApp Coordinator</span>
+                <span>WhatsApp</span>
               </a>
               <a
-
                 href={`tel:${companyConfig.phone}`}
-                className="inline-flex items-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-4 py-2 rounded-xl transition-colors"
+                className="inline-flex items-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-3 py-2 rounded-xl transition-colors"
+                title={`Helpline 1: ${companyConfig.phoneDisplay}`}
               >
                 <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
-                <span>Call Us</span>
+                <span>Call {companyConfig.phoneDisplay}</span>
+              </a>
+              <a
+                href={`tel:${companyConfig.phone2}`}
+                className="inline-flex items-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-3 py-2 rounded-xl transition-colors"
+                title={`Helpline 2: ${companyConfig.phone2Display}`}
+              >
+                <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
+                <span>Call {companyConfig.phone2Display}</span>
               </a>
             </div>
           </div>

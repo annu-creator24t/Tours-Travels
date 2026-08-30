@@ -21,22 +21,26 @@ export const Footer: React.FC = () => {
             <p className="text-[11px] text-slate-400 leading-relaxed">
               Trusted outstation car rentals, airport transfers, and group tour vehicles.
             </p>
-            <div className="flex items-center gap-2 pt-0.5">
+            <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
               <a
-                href={`https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}`}
+                href={companyConfig.contacts[0].whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/50 px-2 py-1 rounded text-[11px] font-medium transition-colors"
+                title={`WhatsApp: ${companyConfig.phoneDisplay}`}
               >
                 <MessageCircle className="w-3 h-3 text-emerald-400" />
-                <span>WhatsApp</span>
+                <span>WhatsApp 1</span>
               </a>
               <a
-                href={`tel:${companyConfig.phone}`}
-                className="inline-flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 px-2 py-1 rounded text-[11px] font-medium transition-colors"
+                href={companyConfig.contacts[1].whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/50 px-2 py-1 rounded text-[11px] font-medium transition-colors"
+                title={`WhatsApp: ${companyConfig.phone2Display}`}
               >
-                <Phone className="w-3 h-3 text-blue-400" />
-                <span>Call</span>
+                <MessageCircle className="w-3 h-3 text-emerald-400" />
+                <span>WhatsApp 2</span>
               </a>
             </div>
           </div>
@@ -91,8 +95,14 @@ export const Footer: React.FC = () => {
             <div className="space-y-1.5 text-xs">
               <p className="flex items-center space-x-2">
                 <Phone className="w-3 h-3 text-blue-400 flex-shrink-0" />
-                <a href={`tel:${companyConfig.phone}`} className="hover:text-white transition-colors">
+                <a href={`tel:${companyConfig.phone}`} className="hover:text-white transition-colors" title="Desk 1">
                   {companyConfig.phoneDisplay}
+                </a>
+              </p>
+              <p className="flex items-center space-x-2">
+                <Phone className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                <a href={`tel:${companyConfig.phone2}`} className="hover:text-white transition-colors" title="Desk 2">
+                  {companyConfig.phone2Display}
                 </a>
               </p>
               <p className="flex items-center space-x-2">

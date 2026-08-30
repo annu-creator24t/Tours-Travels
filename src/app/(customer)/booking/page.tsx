@@ -87,17 +87,27 @@ export default function TrackBookingLookupPage() {
           {/* Quick Support Assistance */}
           <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600">
             <span>Can&apos;t find your reference ID?</span>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <a
                 href={`tel:${companyConfig.phone}`}
                 className="font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                title="Helpline 1"
               >
                 <PhoneCall className="w-3.5 h-3.5" />
-                <span>Call {companyConfig.phoneDisplay}</span>
+                <span>{companyConfig.phoneDisplay}</span>
               </a>
               <span className="text-slate-300">•</span>
               <a
-                href={`https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}`}
+                href={`tel:${companyConfig.phone2}`}
+                className="font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                title="Helpline 2"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>{companyConfig.phone2Display}</span>
+              </a>
+              <span className="text-slate-300">•</span>
+              <a
+                href={companyConfig.contacts[0].whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-emerald-600 hover:text-emerald-800 inline-flex items-center gap-1"

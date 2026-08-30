@@ -42,14 +42,37 @@ export const Navbar: React.FC = () => {
           </Link>
         </nav>
 
-        <div className="flex items-center space-x-3">
-          <a
-            href={`tel:${companyConfig.phone}`}
-            className="hidden sm:flex items-center space-x-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg transition-colors"
-          >
-            <Phone className="w-3.5 h-3.5 text-blue-600" />
-            <span>{companyConfig.phoneDisplay}</span>
-          </a>
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="hidden lg:flex items-center space-x-2">
+            <a
+              href={`tel:${companyConfig.phone}`}
+              className="flex items-center space-x-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors"
+              title={`Call Desk 1: ${companyConfig.phoneDisplay}`}
+            >
+              <Phone className="w-3.5 h-3.5 text-blue-600" />
+              <span>{companyConfig.phoneDisplay}</span>
+            </a>
+            <a
+              href={`tel:${companyConfig.phone2}`}
+              className="flex items-center space-x-1 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors"
+              title={`Call Desk 2: ${companyConfig.phone2Display}`}
+            >
+              <Phone className="w-3.5 h-3.5 text-blue-600" />
+              <span>{companyConfig.phone2Display}</span>
+            </a>
+          </div>
+
+          <div className="hidden sm:flex lg:hidden items-center space-x-1">
+            <a
+              href={`tel:${companyConfig.phone}`}
+              className="flex items-center space-x-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 rounded-lg transition-colors"
+              title={`Call Helpline: ${companyConfig.phoneDisplay}`}
+            >
+              <Phone className="w-3.5 h-3.5 text-blue-600" />
+              <span>{companyConfig.phoneDisplay}</span>
+            </a>
+          </div>
+
           <Link
             href="/book"
             className="text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm transition-colors"

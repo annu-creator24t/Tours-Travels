@@ -11,6 +11,16 @@ export interface SocialLinks {
   googleMaps?: string;
 }
 
+export interface ContactChannel {
+  phone: string;
+  phoneDisplay: string;
+  whatsapp: string;
+  whatsappDisplay: string;
+  telUrl: string;
+  whatsappUrl: string;
+  label?: string;
+}
+
 export interface CompanyConfig {
   name: string;
   shortName: string;
@@ -18,8 +28,13 @@ export interface CompanyConfig {
   description: string;
   phone: string;
   phoneDisplay: string;
+  phone2: string;
+  phone2Display: string;
   whatsapp: string;
   whatsappDisplay: string;
+  whatsapp2: string;
+  whatsapp2Display: string;
+  contacts: ContactChannel[];
   email: string;
   address: {
     street?: string;
@@ -37,31 +52,74 @@ export interface CompanyConfig {
   };
 }
 
+const PRIMARY_PHONE = process.env.NEXT_PUBLIC_COMPANY_PHONE || '+917083644444';
+const PRIMARY_PHONE_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_PHONE_DISPLAY || '+91 70836 44444';
+const SECONDARY_PHONE = process.env.NEXT_PUBLIC_COMPANY_PHONE_2 || '+919919379147';
+const SECONDARY_PHONE_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_PHONE_2_DISPLAY || '+91 99193 79147';
+
+const PRIMARY_WHATSAPP = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP || '+917083644444';
+const PRIMARY_WHATSAPP_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP_DISPLAY || '+91 70836 44444';
+const SECONDARY_WHATSAPP = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP_2 || '+919919379147';
+const SECONDARY_WHATSAPP_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP_2_DISPLAY || '+91 99193 79147';
+
+const cleanPrimary = PRIMARY_WHATSAPP.replace(/[^0-9]/g, '');
+const cleanSecondary = SECONDARY_WHATSAPP.replace(/[^0-9]/g, '');
+
 export const companyConfig: CompanyConfig = {
   name: 'Jay Maa Sheetala Tours & Travel',
   shortName: 'JMSTT',
   tagline: 'Reliable Fleet & Outstation Travel Services',
   description:
     'Safe, dependable, and comfortable vehicle rentals for outstation trips, family vacations, airport transfers, and customized tour packages.',
-  
-  phone: process.env.NEXT_PUBLIC_COMPANY_PHONE || '+919876543210',
-  phoneDisplay: process.env.NEXT_PUBLIC_COMPANY_PHONE_DISPLAY || '+91 98765 43210',
-  
-  whatsapp: process.env.NEXT_PUBLIC_COMPANY_WHATSAPP || '+919876543210',
-  whatsappDisplay: process.env.NEXT_PUBLIC_COMPANY_WHATSAPP_DISPLAY || '+91 98765 43210',
-  
+
+  // Primary Contact Number (7083644444)
+  phone: PRIMARY_PHONE,
+  phoneDisplay: PRIMARY_PHONE_DISPLAY,
+  whatsapp: PRIMARY_WHATSAPP,
+  whatsappDisplay: PRIMARY_WHATSAPP_DISPLAY,
+
+  // Secondary Contact Number (9919379147)
+  phone2: SECONDARY_PHONE,
+  phone2Display: SECONDARY_PHONE_DISPLAY,
+  whatsapp2: SECONDARY_WHATSAPP,
+  whatsapp2Display: SECONDARY_WHATSAPP_DISPLAY,
+
+  // Structured multi-channel contact list
+  contacts: [
+    {
+      phone: PRIMARY_PHONE,
+      phoneDisplay: PRIMARY_PHONE_DISPLAY,
+      whatsapp: PRIMARY_WHATSAPP,
+      whatsappDisplay: PRIMARY_WHATSAPP_DISPLAY,
+      telUrl: `tel:${PRIMARY_PHONE}`,
+      whatsappUrl: `https://wa.me/${cleanPrimary}`,
+      label: 'Desk 1',
+    },
+    {
+      phone: SECONDARY_PHONE,
+      phoneDisplay: SECONDARY_PHONE_DISPLAY,
+      whatsapp: SECONDARY_WHATSAPP,
+      whatsappDisplay: SECONDARY_WHATSAPP_DISPLAY,
+      telUrl: `tel:${SECONDARY_PHONE}`,
+      whatsappUrl: `https://wa.me/${cleanSecondary}`,
+      label: 'Desk 2',
+    },
+  ],
+
   email: process.env.NEXT_PUBLIC_COMPANY_EMAIL || 'contact@jaymaasheetalatours.com',
-  
+
   address: {
     street: process.env.NEXT_PUBLIC_COMPANY_STREET || 'Main Office',
-    city: process.env.NEXT_PUBLIC_COMPANY_CITY || '',
-    state: process.env.NEXT_PUBLIC_COMPANY_STATE || '',
-    pincode: process.env.NEXT_PUBLIC_COMPANY_PINCODE || '',
-    fullAddress: process.env.NEXT_PUBLIC_COMPANY_FULL_ADDRESS || 'Main Office, City Center',
+    city: process.env.NEXT_PUBLIC_COMPANY_CITY || 'Varanasi',
+    state: process.env.NEXT_PUBLIC_COMPANY_STATE || 'Uttar Pradesh',
+    pincode: process.env.NEXT_PUBLIC_COMPANY_PINCODE || '221001',
+    fullAddress:
+      process.env.NEXT_PUBLIC_COMPANY_FULL_ADDRESS ||
+      'Main Office, City Center, Varanasi, UP 221001',
   },
-  
+
   justdialUrl: process.env.NEXT_PUBLIC_JUSTDIAL_URL || '',
-  
+
   socialLinks: {
     facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || '',
     instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL || '',
@@ -69,7 +127,7 @@ export const companyConfig: CompanyConfig = {
     twitter: process.env.NEXT_PUBLIC_TWITTER_URL || '',
     googleMaps: process.env.NEXT_PUBLIC_GOOGLE_MAPS_URL || '',
   },
-  
+
   rating: {
     average: 4.9,
     totalReviews: 120,
