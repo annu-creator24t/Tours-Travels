@@ -108,7 +108,7 @@ export const companyConfig: CompanyConfig = {
     },
   ],
 
-  email: process.env.NEXT_PUBLIC_COMPANY_EMAIL || 'contact@jaymaasheetalatours.com',
+  email: process.env.NEXT_PUBLIC_COMPANY_EMAIL || 'itskingofficial4@gmail.com',
 
   address: {
     street: process.env.NEXT_PUBLIC_COMPANY_STREET || '',
