@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Phone, Mail, MapPin, MessageCircle } from 'lucide-react';
+import { Phone, Mail, MessageCircle } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
 
 export const Footer: React.FC = () => {
@@ -95,10 +95,10 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Direct Contact */}
+          {/* Direct Contact & Support */}
           <div>
             <h4 className="text-[11px] font-bold text-slate-200 mb-2 uppercase tracking-wider">
-              Contact & Address
+              Contact & Support
             </h4>
             <div className="space-y-1.5 text-xs">
               <p className="flex items-center space-x-2">
@@ -118,10 +118,6 @@ export const Footer: React.FC = () => {
                 <a href={`mailto:${companyConfig.email}`} className="hover:text-white transition-colors truncate">
                   {companyConfig.email}
                 </a>
-              </p>
-              <p className="flex items-start space-x-2">
-                <MapPin className="w-3 h-3 text-blue-400 flex-shrink-0 mt-0.5" />
-                <span className="leading-snug">{companyConfig.address.fullAddress}</span>
               </p>
             </div>
           </div>

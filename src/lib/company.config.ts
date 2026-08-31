@@ -111,16 +111,14 @@ export const companyConfig: CompanyConfig = {
   email: process.env.NEXT_PUBLIC_COMPANY_EMAIL || 'contact@jaymaasheetalatours.com',
 
   address: {
-    street: process.env.NEXT_PUBLIC_COMPANY_STREET || 'Main Office',
-    city: process.env.NEXT_PUBLIC_COMPANY_CITY || 'Varanasi',
-    state: process.env.NEXT_PUBLIC_COMPANY_STATE || 'Uttar Pradesh',
-    pincode: process.env.NEXT_PUBLIC_COMPANY_PINCODE || '221001',
-    fullAddress:
-      process.env.NEXT_PUBLIC_COMPANY_FULL_ADDRESS ||
-      'Main Office, City Center, Varanasi, UP 221001',
+    street: process.env.NEXT_PUBLIC_COMPANY_STREET || '',
+    city: process.env.NEXT_PUBLIC_COMPANY_CITY || '',
+    state: process.env.NEXT_PUBLIC_COMPANY_STATE || '',
+    pincode: process.env.NEXT_PUBLIC_COMPANY_PINCODE || '',
+    fullAddress: process.env.NEXT_PUBLIC_COMPANY_FULL_ADDRESS || '',
   },
 
-  justdialUrl: process.env.NEXT_PUBLIC_JUSTDIAL_URL || '',
+  justdialUrl: process.env.NEXT_PUBLIC_JUSTDIAL_URL || 'https://www.justdial.com',
 
   socialLinks: {
     facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || '',

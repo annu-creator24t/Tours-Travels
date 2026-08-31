@@ -3,18 +3,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import prisma from '@/lib/db';
 import {
-  Compass,
   CheckCircle2,
   XCircle,
   ChevronLeft,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
   Car,
   User,
-  CreditCard,
-  ShieldCheck,
 } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
 import PrintReceiptButton from '@/components/customer/PrintReceiptButton';
@@ -153,10 +146,7 @@ export default async function BookingReceiptPage({
                   {companyConfig.name}
                 </h1>
               </div>
-              <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-                {companyConfig.address.fullAddress}
-              </p>
-              <p className="text-xs text-slate-600 font-medium">
+              <p className="text-xs text-slate-600 font-medium pt-1">
                 Phone: {companyConfig.phoneDisplay}, {companyConfig.phone2Display} | Email: {companyConfig.email}
               </p>
             </div>

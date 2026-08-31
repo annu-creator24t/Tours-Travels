@@ -64,12 +64,7 @@ export default async function ReviewsPage() {
       ? (
           reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews
         ).toFixed(1)
-      : '5.0';
-
-  const justdialCount = reviews.filter((r) => r.source === 'JUSTDIAL').length;
-  const verifiedCount = reviews.filter(
-    (r) => r.source === 'VERIFIED_CUSTOMER'
-  ).length;
+      : null;
 
   return (
     <div className="bg-slate-50 min-h-screen py-12">
@@ -97,44 +92,64 @@ export default async function ReviewsPage() {
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
                 Overall Traveler Score
               </span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl sm:text-5xl font-black text-slate-900">
-                  {avgRating}
-                </span>
-                <span className="text-sm font-semibold text-slate-400">/ 5.0</span>
-              </div>
-              <div className="flex items-center gap-1 text-amber-500 mt-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-500" />
-                ))}
-                <span className="text-xs text-slate-500 font-medium ml-1">
-                  ({totalReviews} verified {totalReviews === 1 ? 'review' : 'reviews'})
-                </span>
-              </div>
+              {totalReviews > 0 && avgRating ? (
+                <>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl sm:text-5xl font-black text-slate-900">
+                      {avgRating}
+                    </span>
+                    <span className="text-sm font-semibold text-slate-400">/ 5.0</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-amber-500 mt-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${
+                          i < Math.round(Number(avgRating))
+                            ? 'fill-amber-500 text-amber-500'
+                            : 'text-slate-300'
+                        }`}
+                      />
+                    ))}
+                    <span className="text-xs text-slate-500 font-medium ml-1">
+                      ({totalReviews} verified {totalReviews === 1 ? 'review' : 'reviews'})
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="mt-0.5">
+                  <span className="text-xl sm:text-2xl font-bold text-slate-800 block">
+                    No reviews yet
+                  </span>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Be the first to share your experience
+                  </p>
+                </div>
+              )}
             </div>
 
-            {/* Source Attribution Breakdown */}
-            <div className="flex flex-col justify-center py-4 md:py-0 md:px-6 space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Review Verification Sources
+            {/* Justdial Reviews CTA */}
+            <div className="flex flex-col items-center md:items-start justify-center py-4 md:py-0 md:px-6 space-y-2 text-center md:text-left">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                Justdial Reviews
               </span>
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-amber-800">Justdial Verified:</span>
-                <span className="font-bold text-slate-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                  {justdialCount} Verified
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-emerald-800">Direct Bookings:</span>
-                <span className="font-bold text-slate-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  {verifiedCount} Verified
-                </span>
-              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                Read our customer feedback directly on Justdial.
+              </p>
+              <a
+                href={companyConfig.justdialUrl || 'https://www.justdial.com'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3.5 py-2 rounded-xl transition-colors shadow-sm mt-1"
+                title="View Reviews on Justdial"
+              >
+                <span>View Reviews on Justdial</span>
+                <span aria-hidden="true">&rarr;</span>
+              </a>
             </div>
-
 
             {/* Direct WhatsApp / Help Action */}
-            <div className="flex flex-col items-center md:items-end justify-center pt-4 md:pt-0 md:pl-6">
+            <div className="flex flex-col items-center md:items-end justify-center pt-4 md:pt-0 md:pl-6 text-center md:text-right">
               <span className="text-xs text-slate-500 mb-2">Have you traveled with us?</span>
               <a
                 href={`https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
-import { Phone, Mail, MapPin, MessageCircle, PhoneCall } from 'lucide-react';
+import { Phone, Mail, MessageCircle, PhoneCall } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
 
 export const metadata: Metadata = {
@@ -136,35 +136,29 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Email & Office */}
+        {/* Email Support */}
         <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center shadow-sm flex flex-col justify-between">
           <div>
             <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
               <Mail className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-slate-900 mb-1">Email & Location</h3>
+            <h3 className="font-bold text-slate-900 mb-1">Email Support</h3>
             <p className="text-xs text-slate-500 mb-4">Corporate & tour inquiries</p>
           </div>
 
           <div className="space-y-2 pt-2 border-t border-slate-100 text-left">
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                Email
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                Email Inquiries
               </span>
               <a
                 href={`mailto:${companyConfig.email}`}
-                className="font-semibold text-indigo-600 hover:underline break-all block"
+                className="font-semibold text-indigo-600 hover:underline break-all block text-sm"
               >
                 {companyConfig.email}
               </a>
-            </div>
-
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                Head Office
-              </span>
-              <span className="text-slate-700 text-[11px] leading-snug block">
-                {companyConfig.address.fullAddress}
+              <span className="text-[11px] text-slate-500 block mt-1">
+                Online bookings & assistance
               </span>
             </div>
           </div>
