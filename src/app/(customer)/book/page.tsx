@@ -23,6 +23,8 @@ import {
   PhoneCall,
 } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
+import LocationAutocompleteInput from '@/components/ui/LocationAutocompleteInput';
+import PassengerCountInput from '@/components/ui/PassengerCountInput';
 
 interface VehicleOption {
   id: string;
@@ -369,14 +371,12 @@ function BookingFormContent() {
                 <label className="block font-semibold text-slate-800 mb-1.5">
                   Pickup Location & Landmark *
                 </label>
-                <input
-                  type="text"
+                <LocationAutocompleteInput
                   value={formData.pickupLocation}
-                  onChange={(e) =>
-                    setFormData({ ...formData, pickupLocation: e.target.value })
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, pickupLocation: val }))
                   }
                   placeholder="e.g. Terminal 3 Delhi Airport / Connaught Place"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
                   required
                 />
               </div>
@@ -385,14 +385,12 @@ function BookingFormContent() {
                 <label className="block font-semibold text-slate-800 mb-1.5">
                   Drop Location / Final Destination *
                 </label>
-                <input
-                  type="text"
+                <LocationAutocompleteInput
                   value={formData.dropLocation}
-                  onChange={(e) =>
-                    setFormData({ ...formData, dropLocation: e.target.value })
+                  onChange={(val) =>
+                    setFormData((prev) => ({ ...prev, dropLocation: val }))
                   }
                   placeholder="e.g. Haridwar / Agra / Jaipur Hotel"
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
                   required
                 />
               </div>
@@ -497,19 +495,16 @@ function BookingFormContent() {
                 <label className="block font-semibold text-slate-800 mb-1.5">
                   Number of Passengers (1 to 60) *
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="60"
+                <PassengerCountInput
                   value={formData.passengerCount}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      passengerCount: parseInt(e.target.value, 10) || 1,
-                    })
+                  onChange={(count) =>
+                    setFormData((prev) => ({ ...prev, passengerCount: count }))
                   }
-                  className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-xs"
-                  required
+                  min={1}
+                  max={60}
+                  vehicleCapacity={
+                    vehicles.find((v) => v.id === formData.vehicleId)?.seatingCapacity
+                  }
                 />
               </div>
             </div>

@@ -91,19 +91,10 @@ export default function TrackBookingLookupPage() {
               <a
                 href={`tel:${companyConfig.phone}`}
                 className="font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
-                title="Helpline 1"
+                title="Helpline"
               >
                 <PhoneCall className="w-3.5 h-3.5" />
                 <span>{companyConfig.phoneDisplay}</span>
-              </a>
-              <span className="text-slate-300">•</span>
-              <a
-                href={`tel:${companyConfig.phone2}`}
-                className="font-semibold text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
-                title="Helpline 2"
-              >
-                <PhoneCall className="w-3.5 h-3.5" />
-                <span>{companyConfig.phone2Display}</span>
               </a>
               <span className="text-slate-300">•</span>
               <a

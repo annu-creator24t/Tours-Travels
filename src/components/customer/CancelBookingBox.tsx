@@ -174,7 +174,7 @@ export default function CancelBookingBox({
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. 7083644444"
+                  placeholder="e.g. 9919379147"
                   disabled={isSubmitting}
                   className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:outline-none text-xs disabled:bg-slate-100"
                   required

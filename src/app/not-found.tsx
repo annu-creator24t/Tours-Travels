@@ -47,23 +47,14 @@ export default function NotFound() {
 
         <div className="mt-8 pt-6 border-t border-slate-100 text-xs text-slate-500">
           <span>Need immediate assistance? </span>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+          <div className="mt-2 flex items-center justify-center">
             <a
               href={`tel:${companyConfig.phone}`}
-              className="text-blue-600 hover:underline font-semibold inline-flex items-center gap-1"
-              title="Helpline 1"
+              className="text-blue-600 hover:underline font-semibold inline-flex items-center gap-1.5"
+              title="Helpline"
             >
               <PhoneCall className="w-3.5 h-3.5" />
               <span>{companyConfig.phoneDisplay}</span>
-            </a>
-            <span className="text-slate-300">•</span>
-            <a
-              href={`tel:${companyConfig.phone2}`}
-              className="text-blue-600 hover:underline font-semibold inline-flex items-center gap-1"
-              title="Helpline 2"
-            >
-              <PhoneCall className="w-3.5 h-3.5" />
-              <span>{companyConfig.phone2Display}</span>
             </a>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { companyConfig } from '@/lib/company.config';
 
 export const metadata: Metadata = {
   title: `Contact Us — ${companyConfig.name}`,
-  description: `Reach out to ${companyConfig.name} for outstation cab bookings, pilgrimage tour quotes, and fleet inquiries. 24/7 customer support on ${companyConfig.phoneDisplay} and ${companyConfig.phone2Display}.`,
+  description: `Reach out to ${companyConfig.name} for outstation cab bookings, pilgrimage tour quotes, and fleet inquiries. 24/7 customer support on ${companyConfig.phoneDisplay}.`,
   alternates: {
     canonical: '/contact',
   },
@@ -65,30 +65,20 @@ export default function ContactPage() {
           </div>
 
           <div className="space-y-2 pt-2 border-t border-slate-100">
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Helpline 1
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                24/7 Helpline
               </span>
               <a
                 href={`tel:${companyConfig.phone}`}
-                className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors inline-flex items-center gap-1.5 mt-0.5"
+                className="text-base font-bold text-blue-600 hover:text-blue-800 transition-colors inline-flex items-center gap-1.5"
               >
-                <PhoneCall className="w-3.5 h-3.5" />
+                <PhoneCall className="w-4 h-4" />
                 <span>{companyConfig.phoneDisplay}</span>
               </a>
-            </div>
-
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                Helpline 2
+              <span className="text-[11px] text-slate-400 block mt-1">
+                Instant booking assistance & dispatch
               </span>
-              <a
-                href={`tel:${companyConfig.phone2}`}
-                className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors inline-flex items-center gap-1.5 mt-0.5"
-              >
-                <PhoneCall className="w-3.5 h-3.5" />
-                <span>{companyConfig.phone2Display}</span>
-              </a>
             </div>
           </div>
         </div>
@@ -104,34 +94,22 @@ export default function ContactPage() {
           </div>
 
           <div className="space-y-2 pt-2 border-t border-slate-100">
-            <div className="bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-100">
-              <span className="text-[10px] uppercase font-bold text-emerald-700 block">
-                WhatsApp Desk 1
+            <div className="bg-emerald-50/60 p-3.5 rounded-xl border border-emerald-100">
+              <span className="text-[10px] uppercase font-bold text-emerald-700 block mb-1">
+                Official WhatsApp Desk
               </span>
               <a
                 href={getWaUrl(companyConfig.whatsapp)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-bold text-emerald-700 hover:text-emerald-900 transition-colors inline-flex items-center gap-1.5 mt-0.5"
+                className="text-base font-bold text-emerald-700 hover:text-emerald-900 transition-colors inline-flex items-center gap-1.5"
               >
-                <MessageCircle className="w-3.5 h-3.5" />
+                <MessageCircle className="w-4 h-4" />
                 <span>{companyConfig.whatsappDisplay}</span>
               </a>
-            </div>
-
-            <div className="bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-100">
-              <span className="text-[10px] uppercase font-bold text-emerald-700 block">
-                WhatsApp Desk 2
+              <span className="text-[11px] text-emerald-800/80 block mt-1">
+                Quick quotes & vehicle availability
               </span>
-              <a
-                href={getWaUrl(companyConfig.whatsapp2)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-bold text-emerald-700 hover:text-emerald-900 transition-colors inline-flex items-center gap-1.5 mt-0.5"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                <span>{companyConfig.whatsapp2Display}</span>
-              </a>
             </div>
           </div>
         </div>

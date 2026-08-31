@@ -495,19 +495,11 @@ export default async function BookingStatusPage({
               </a>
               <a
                 href={`tel:${companyConfig.phone}`}
-                className="inline-flex items-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-3 py-2 rounded-xl transition-colors"
-                title={`Helpline 1: ${companyConfig.phoneDisplay}`}
+                className="inline-flex items-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-3.5 py-2 rounded-xl transition-colors"
+                title={`Helpline: ${companyConfig.phoneDisplay}`}
               >
                 <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
                 <span>Call {companyConfig.phoneDisplay}</span>
-              </a>
-              <a
-                href={`tel:${companyConfig.phone2}`}
-                className="inline-flex items-center gap-1.5 border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold px-3 py-2 rounded-xl transition-colors"
-                title={`Helpline 2: ${companyConfig.phone2Display}`}
-              >
-                <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
-                <span>Call {companyConfig.phone2Display}</span>
               </a>
             </div>
           </div>

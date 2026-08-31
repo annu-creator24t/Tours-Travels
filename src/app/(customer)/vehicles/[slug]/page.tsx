@@ -407,24 +407,14 @@ export default async function VehicleDetailPage({ params }: VehicleDetailsProps)
                   <span>WhatsApp Inquiry</span>
                 </a>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <a
-                    href={`tel:${companyConfig.phone}`}
-                    className="border border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold py-2 px-2 rounded-xl text-center inline-flex items-center justify-center gap-1.5 transition-colors text-xs"
-                    title={`Call Desk 1: ${companyConfig.phoneDisplay}`}
-                  >
-                    <PhoneCall className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                    <span className="truncate">{companyConfig.phoneDisplay}</span>
-                  </a>
-                  <a
-                    href={`tel:${companyConfig.phone2}`}
-                    className="border border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold py-2 px-2 rounded-xl text-center inline-flex items-center justify-center gap-1.5 transition-colors text-xs"
-                    title={`Call Desk 2: ${companyConfig.phone2Display}`}
-                  >
-                    <PhoneCall className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
-                    <span className="truncate">{companyConfig.phone2Display}</span>
-                  </a>
-                </div>
+                <a
+                  href={`tel:${companyConfig.phone}`}
+                  className="w-full border border-slate-300 hover:bg-slate-50 text-slate-800 font-semibold py-2.5 px-3 rounded-xl text-center inline-flex items-center justify-center gap-2 transition-colors text-xs"
+                  title={`Call: ${companyConfig.phoneDisplay}`}
+                >
+                  <PhoneCall className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />
+                  <span>Call {companyConfig.phoneDisplay}</span>
+                </a>
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-100 text-center">

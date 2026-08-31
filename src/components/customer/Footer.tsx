@@ -34,21 +34,11 @@ export const Footer: React.FC = () => {
                 href={companyConfig.contacts[0].whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/50 px-2 py-1 rounded text-[11px] font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/50 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors"
                 title={`WhatsApp: ${companyConfig.phoneDisplay}`}
               >
-                <MessageCircle className="w-3 h-3 text-emerald-400" />
-                <span>WhatsApp 1</span>
-              </a>
-              <a
-                href={companyConfig.contacts[1].whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/50 px-2 py-1 rounded text-[11px] font-medium transition-colors"
-                title={`WhatsApp: ${companyConfig.phone2Display}`}
-              >
-                <MessageCircle className="w-3 h-3 text-emerald-400" />
-                <span>WhatsApp 2</span>
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+                <span>WhatsApp Us</span>
               </a>
             </div>
           </div>
@@ -102,19 +92,13 @@ export const Footer: React.FC = () => {
             </h4>
             <div className="space-y-1.5 text-xs">
               <p className="flex items-center space-x-2">
-                <Phone className="w-3 h-3 text-blue-400 flex-shrink-0" />
-                <a href={`tel:${companyConfig.phone}`} className="hover:text-white transition-colors" title="Desk 1">
+                <Phone className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                <a href={`tel:${companyConfig.phone}`} className="hover:text-white transition-colors" title="Helpline">
                   {companyConfig.phoneDisplay}
                 </a>
               </p>
               <p className="flex items-center space-x-2">
-                <Phone className="w-3 h-3 text-blue-400 flex-shrink-0" />
-                <a href={`tel:${companyConfig.phone2}`} className="hover:text-white transition-colors" title="Desk 2">
-                  {companyConfig.phone2Display}
-                </a>
-              </p>
-              <p className="flex items-center space-x-2">
-                <Mail className="w-3 h-3 text-blue-400 flex-shrink-0" />
+                <Mail className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
                 <a href={`mailto:${companyConfig.email}`} className="hover:text-white transition-colors truncate">
                   {companyConfig.email}
                 </a>

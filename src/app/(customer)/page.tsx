@@ -13,6 +13,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
+import LocationAutocompleteInput from '@/components/ui/LocationAutocompleteInput';
 
 export default function HomePage() {
   const router = useRouter();
@@ -102,32 +103,22 @@ export default function HomePage() {
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Pickup Location
                 </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    value={pickup}
-                    onChange={(e) => setPickup(e.target.value)}
-                    placeholder="Enter pickup city or landmark"
-                    className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
+                <LocationAutocompleteInput
+                  value={pickup}
+                  onChange={setPickup}
+                  placeholder="Enter pickup city or landmark"
+                />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1">
                   Destination / Drop City
                 </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    placeholder="Enter destination city"
-                    className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  />
-                </div>
+                <LocationAutocompleteInput
+                  value={destination}
+                  onChange={setDestination}
+                  placeholder="Enter destination city"
+                />
               </div>
 
               <div>

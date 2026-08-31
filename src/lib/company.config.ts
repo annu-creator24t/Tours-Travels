@@ -53,13 +53,13 @@ export interface CompanyConfig {
   };
 }
 
-const PRIMARY_PHONE = process.env.NEXT_PUBLIC_COMPANY_PHONE || '+917083644444';
-const PRIMARY_PHONE_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_PHONE_DISPLAY || '+91 70836 44444';
+const PRIMARY_PHONE = process.env.NEXT_PUBLIC_COMPANY_PHONE || '+919919379147';
+const PRIMARY_PHONE_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_PHONE_DISPLAY || '+91 99193 79147';
 const SECONDARY_PHONE = process.env.NEXT_PUBLIC_COMPANY_PHONE_2 || '+919919379147';
 const SECONDARY_PHONE_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_PHONE_2_DISPLAY || '+91 99193 79147';
 
-const PRIMARY_WHATSAPP = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP || '+917083644444';
-const PRIMARY_WHATSAPP_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP_DISPLAY || '+91 70836 44444';
+const PRIMARY_WHATSAPP = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP || '+919919379147';
+const PRIMARY_WHATSAPP_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP_DISPLAY || '+91 99193 79147';
 const SECONDARY_WHATSAPP = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP_2 || '+919919379147';
 const SECONDARY_WHATSAPP_DISPLAY = process.env.NEXT_PUBLIC_COMPANY_WHATSAPP_2_DISPLAY || '+91 99193 79147';
 
@@ -74,19 +74,19 @@ export const companyConfig: CompanyConfig = {
   description:
     'Safe, dependable, and comfortable vehicle rentals for outstation trips, family vacations, airport transfers, and customized tour packages.',
 
-  // Primary Contact Number (7083644444)
+  // Primary Contact Number (9919379147)
   phone: PRIMARY_PHONE,
   phoneDisplay: PRIMARY_PHONE_DISPLAY,
   whatsapp: PRIMARY_WHATSAPP,
   whatsappDisplay: PRIMARY_WHATSAPP_DISPLAY,
 
-  // Secondary Contact Number (9919379147)
+  // Fallback Secondary Contact fields (mapped to active 9919379147)
   phone2: SECONDARY_PHONE,
   phone2Display: SECONDARY_PHONE_DISPLAY,
   whatsapp2: SECONDARY_WHATSAPP,
   whatsapp2Display: SECONDARY_WHATSAPP_DISPLAY,
 
-  // Structured multi-channel contact list
+  // Structured contact list
   contacts: [
     {
       phone: PRIMARY_PHONE,
@@ -95,16 +95,7 @@ export const companyConfig: CompanyConfig = {
       whatsappDisplay: PRIMARY_WHATSAPP_DISPLAY,
       telUrl: `tel:${PRIMARY_PHONE}`,
       whatsappUrl: `https://wa.me/${cleanPrimary}`,
-      label: 'Desk 1',
-    },
-    {
-      phone: SECONDARY_PHONE,
-      phoneDisplay: SECONDARY_PHONE_DISPLAY,
-      whatsapp: SECONDARY_WHATSAPP,
-      whatsappDisplay: SECONDARY_WHATSAPP_DISPLAY,
-      telUrl: `tel:${SECONDARY_PHONE}`,
-      whatsappUrl: `https://wa.me/${cleanSecondary}`,
-      label: 'Desk 2',
+      label: 'Main Desk',
     },
   ],
 

@@ -147,7 +147,7 @@ export default async function BookingReceiptPage({
                 </h1>
               </div>
               <p className="text-xs text-slate-600 font-medium pt-1">
-                Phone: {companyConfig.phoneDisplay}, {companyConfig.phone2Display} | Email: {companyConfig.email}
+                Phone: {companyConfig.phoneDisplay} | Email: {companyConfig.email}
               </p>
             </div>
 
@@ -334,7 +334,7 @@ export default async function BookingReceiptPage({
             <ul className="list-disc list-inside space-y-0.5 text-[10px]">
               <li>Toll tax, parking, and state permit charges are to be verified per route itinerary.</li>
               <li>Please keep this digital or printed receipt for coordinator and driver verification on pickup.</li>
-              <li>For any schedule amendments or queries, contact our 24/7 helplines at {companyConfig.phoneDisplay} or {companyConfig.phone2Display}.</li>
+              <li>For any schedule amendments or queries, contact our 24/7 helpline at {companyConfig.phoneDisplay}.</li>
             </ul>
             <div className="pt-3 flex justify-between items-center text-[10px] text-slate-400">
               <span>Authorized Travel Coordinator · {companyConfig.name}</span>
