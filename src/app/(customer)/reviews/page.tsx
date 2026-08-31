@@ -137,7 +137,10 @@ export default async function ReviewsPage() {
                 Read our customer feedback directly on Justdial.
               </p>
               <a
-                href={companyConfig.justdialUrl || 'https://jsdl.in/RSL-YYJ1787846600'}
+                href={
+                  companyConfig.justdialUrl ||
+                  'https://www.justdial.com/Ballia/Jay-Maa-Sheetala-Tours-Travel-Near-Airtel-Tower-Tikhampur-Roopnagar-Tikhampur/9999P5494-5494-250525091822-J4B5_BZDET?auto=1&trkid=9991292519&term='
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3.5 py-2 rounded-xl transition-colors shadow-sm mt-1"
