@@ -1,13 +1,13 @@
 import React from 'react';
 import prisma from '@/lib/db';
-import { Star, ShieldCheck, MessageCircle, Plus } from 'lucide-react';
+import { Star, ShieldCheck, MessageCircle } from 'lucide-react';
 import ReviewSourceBadge from '@/components/customer/ReviewSourceBadge';
 import type { Metadata } from 'next';
 import { companyConfig } from '@/lib/company.config';
 
 export const metadata: Metadata = {
-  title: `Customer Reviews & Justdial Ratings — ${companyConfig.name}`,
-  description: `Read real traveler reviews and verified Justdial ratings for ${companyConfig.name} outstation and fleet rental services.`,
+  title: `Customer Reviews — ${companyConfig.name}`,
+  description: `Read customer feedback and reviews for ${companyConfig.name} outstation and fleet rental services.`,
   alternates: {
     canonical: '/reviews',
   },
@@ -16,8 +16,8 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: '/reviews',
     siteName: companyConfig.name,
-    title: `Customer Reviews & Justdial Ratings — ${companyConfig.name}`,
-    description: `Read real traveler reviews and verified Justdial ratings for ${companyConfig.name} outstation and fleet rental services.`,
+    title: `Customer Reviews — ${companyConfig.name}`,
+    description: `Read customer feedback and reviews for ${companyConfig.name} outstation and fleet rental services.`,
     images: [
       {
         url: '/images/hero-fleet.jpg',
@@ -29,8 +29,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: `Customer Reviews & Justdial Ratings — ${companyConfig.name}`,
-    description: `Read real traveler reviews and verified Justdial ratings for ${companyConfig.name} outstation and fleet rental services.`,
+    title: `Customer Reviews — ${companyConfig.name}`,
+    description: `Read customer feedback and reviews for ${companyConfig.name} outstation and fleet rental services.`,
     images: ['/images/hero-fleet.jpg'],
   },
 };
@@ -73,7 +73,7 @@ export default async function ReviewsPage() {
         <div className="text-center max-w-2xl mx-auto mb-10">
           <div className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider mb-4 border border-blue-200/60">
             <ShieldCheck className="w-4 h-4 text-blue-600" />
-            <span>Verified Customer Reviews</span>
+            <span>Customer Reviews</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
             Customer Ratings & Reviews
@@ -112,7 +112,7 @@ export default async function ReviewsPage() {
                       />
                     ))}
                     <span className="text-xs text-slate-500 font-medium ml-1">
-                      ({totalReviews} verified {totalReviews === 1 ? 'review' : 'reviews'})
+                      ({totalReviews} {totalReviews === 1 ? 'review' : 'reviews'})
                     </span>
                   </div>
                 </>
@@ -122,7 +122,7 @@ export default async function ReviewsPage() {
                     No reviews yet
                   </span>
                   <p className="text-xs text-slate-500 mt-1">
-                    Be the first to share your experience
+                    Be the first to share your experience.
                   </p>
                 </div>
               )}
@@ -134,7 +134,7 @@ export default async function ReviewsPage() {
                 Justdial Reviews
               </span>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Read our customer feedback directly on Justdial.
+                Read customer feedback directly on Justdial.
               </p>
               <a
                 href={
@@ -146,8 +146,7 @@ export default async function ReviewsPage() {
                 className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3.5 py-2 rounded-xl transition-colors shadow-sm mt-1"
                 title="View Reviews on Justdial"
               >
-                <span>View Reviews on Justdial</span>
-                <span aria-hidden="true">&rarr;</span>
+                <span>View Reviews on Justdial &rarr;</span>
               </a>
             </div>
 
@@ -171,9 +170,12 @@ export default async function ReviewsPage() {
 
         {/* Reviews Grid */}
         {reviews.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 max-w-md mx-auto">
-            <p className="text-slate-500 text-sm">
-              No customer reviews published yet. Be the first to share your journey!
+          <div className="bg-white rounded-2xl p-12 text-center border border-slate-200 max-w-md mx-auto shadow-sm">
+            <p className="text-slate-800 font-semibold text-base mb-1">
+              No reviews yet
+            </p>
+            <p className="text-slate-500 text-xs">
+              Be the first to share your experience.
             </p>
           </div>
         ) : (
