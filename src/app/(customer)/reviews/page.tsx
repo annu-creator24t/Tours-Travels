@@ -137,7 +137,7 @@ export default async function ReviewsPage() {
                 Read our customer feedback directly on Justdial.
               </p>
               <a
-                href={companyConfig.justdialUrl || 'https://www.justdial.com'}
+                href={companyConfig.justdialUrl || 'https://jsdl.in/RSL-YYJ1787846600'}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold px-3.5 py-2 rounded-xl transition-colors shadow-sm mt-1"

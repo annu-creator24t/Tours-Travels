@@ -118,7 +118,7 @@ export const companyConfig: CompanyConfig = {
     fullAddress: process.env.NEXT_PUBLIC_COMPANY_FULL_ADDRESS || '',
   },
 
-  justdialUrl: process.env.NEXT_PUBLIC_JUSTDIAL_URL || 'https://www.justdial.com',
+  justdialUrl: process.env.NEXT_PUBLIC_JUSTDIAL_URL || 'https://jsdl.in/RSL-YYJ1787846600',
 
   socialLinks: {
     facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL || '',

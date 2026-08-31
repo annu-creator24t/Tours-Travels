@@ -1,6 +1,7 @@
 import React from 'react';
 import { ReviewSource } from '@prisma/client';
 import { ShieldCheck, CheckCircle2, MessageSquare, ExternalLink } from 'lucide-react';
+import { companyConfig } from '@/lib/company.config';
 
 interface ReviewSourceBadgeProps {
   source: ReviewSource;
@@ -8,14 +9,16 @@ interface ReviewSourceBadgeProps {
 }
 
 export default function ReviewSourceBadge({ source, sourceUrl }: ReviewSourceBadgeProps) {
+  const justdialTarget = sourceUrl || companyConfig.justdialUrl;
+
   if (source === 'JUSTDIAL') {
     return (
       <div className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300/80 px-2.5 py-1 rounded-full text-[11px] font-bold">
         <ShieldCheck className="w-3.5 h-3.5 text-amber-700" />
         <span>Justdial Verified</span>
-        {sourceUrl && (
+        {justdialTarget && (
           <a
-            href={sourceUrl}
+            href={justdialTarget}
             target="_blank"
             rel="noopener noreferrer"
             className="text-amber-700 hover:text-amber-950 ml-0.5"
