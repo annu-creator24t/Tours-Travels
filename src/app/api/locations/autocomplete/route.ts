@@ -15,143 +15,95 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, data: [] });
   }
 
-  const googleMapsKey =
-    process.env.GOOGLE_MAPS_API_KEY ||
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const apiKey = process.env.LOCATIONIQ_API_KEY;
 
-  // 1. If Google Maps API key is configured, query Google Places Autocomplete API
-  if (googleMapsKey) {
-    try {
-      const googleUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-        query
-      )}&components=country:in&language=en&key=${googleMapsKey}`;
-
-      const res = await fetch(googleUrl, {
-        signal: AbortSignal.timeout(3000),
-      });
-
-      if (res.ok) {
-        const json = await res.json();
-        if (json.status === 'OK' && Array.isArray(json.predictions)) {
-          const suggestions: LocationSuggestion[] = json.predictions.map(
-            (item: any, idx: number) => ({
-              id: item.place_id || `g-${idx}-${Date.now()}`,
-              mainText:
-                item.structured_formatting?.main_text ||
-                item.description.split(',')[0] ||
-                item.description,
-              secondaryText:
-                item.structured_formatting?.secondary_text ||
-                item.description.split(',').slice(1).join(',').trim() ||
-                'India',
-              description: item.description,
-            })
-          );
-          return NextResponse.json({ success: true, data: suggestions });
-        }
-      }
-    } catch (err) {
-      console.warn('Google Places autocomplete error, falling back to OSM:', err);
-    }
+  if (!apiKey) {
+    console.warn(
+      'LOCATIONIQ_API_KEY is not configured in server environment. Location autocomplete fallback active.'
+    );
+    return NextResponse.json({ success: true, data: [] });
   }
 
-  // 2. OpenStreetMap / Photon Autocomplete Provider (Free, reliable, no key required)
   try {
-    const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(
-      query
-    )}&limit=6&lang=en`;
+    const locationIqUrl = `https://api.locationiq.com/v1/autocomplete?key=${encodeURIComponent(
+      apiKey
+    )}&q=${encodeURIComponent(query)}&limit=6&countrycodes=in&format=json`;
 
-    const res = await fetch(photonUrl, {
+    const res = await fetch(locationIqUrl, {
       headers: {
-        'User-Agent': 'ToursAndTravels-LocationSearch/1.0',
         Accept: 'application/json',
+        'User-Agent': 'JayMaaSheetalaTours-LocationSearch/1.0',
       },
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(8000),
     });
 
-    if (res.ok) {
-      const json = await res.json();
-      if (json && Array.isArray(json.features)) {
-        const suggestions: LocationSuggestion[] = json.features.map(
-          (feat: any, idx: number) => {
-            const props = feat.properties || {};
-            const name = props.name || query;
-            const contextParts = [
-              props.district,
-              props.city,
-              props.state,
-              props.country,
-            ].filter(Boolean);
-            const secondaryText = contextParts.join(', ') || 'India';
-            const description = `${name}${secondaryText ? `, ${secondaryText}` : ''}`;
-
-            return {
-              id: props.osm_id ? String(props.osm_id) : `osm-${idx}-${Date.now()}`,
-              mainText: name,
-              secondaryText,
-              description,
-            };
-          }
-        );
-
-        if (suggestions.length > 0) {
-          return NextResponse.json({ success: true, data: suggestions });
-        }
-      }
+    // LocationIQ returns HTTP 404 with {"error":"Unable to geocode"} when no matching locations exist
+    if (res.status === 404) {
+      return NextResponse.json({ success: true, data: [] });
     }
-  } catch (photonErr) {
-    console.warn('Photon autocomplete failed, trying Nominatim fallback:', photonErr);
-  }
 
-  // 3. Nominatim OSM Fallback
-  try {
-    const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-      query
-    )}&format=json&addressdetails=1&limit=6&countrycodes=in`;
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => '');
+      console.warn(
+        `LocationIQ API response warning (status ${res.status}):`,
+        errorText || res.statusText
+      );
+      return NextResponse.json(
+        { success: false, error: 'Location search unavailable', data: [] },
+        { status: res.status >= 500 ? 502 : 400 }
+      );
+    }
 
-    const res = await fetch(nominatimUrl, {
-      headers: {
-        'User-Agent': 'ToursAndTravels-LocationSearch/1.0',
-        Accept: 'application/json',
-      },
-      signal: AbortSignal.timeout(3000),
-    });
+    const json = await res.json();
 
-    if (res.ok) {
-      const json = await res.json();
-      if (Array.isArray(json)) {
-        const suggestions: LocationSuggestion[] = json.map(
-          (item: any, idx: number) => {
-            const address = item.address || {};
-            const mainText =
-              address.city ||
-              address.town ||
-              address.village ||
-              address.suburb ||
-              item.display_name.split(',')[0];
-            const secondaryText = [
-              address.state_district,
-              address.state,
-              address.country,
+    if (Array.isArray(json)) {
+      const suggestions: LocationSuggestion[] = json.map(
+        (item: any, idx: number) => {
+          const mainText =
+            item.display_place ||
+            item.address?.name ||
+            item.address?.city ||
+            item.address?.town ||
+            (item.display_name ? item.display_name.split(',')[0].trim() : query);
+
+          const secondaryText =
+            item.display_address ||
+            [
+              item.address?.state_district,
+              item.address?.state,
+              item.address?.country,
             ]
               .filter(Boolean)
-              .join(', ');
+              .join(', ') ||
+            'India';
 
-            return {
-              id: item.place_id ? String(item.place_id) : `nom-${idx}-${Date.now()}`,
-              mainText,
-              secondaryText: secondaryText || 'India',
-              description: item.display_name,
-            };
-          }
-        );
-        return NextResponse.json({ success: true, data: suggestions });
-      }
+          const description =
+            item.display_name ||
+            `${mainText}${secondaryText ? `, ${secondaryText}` : ''}`;
+
+          return {
+            id: item.place_id ? String(item.place_id) : `liq-${idx}-${Date.now()}`,
+            mainText,
+            secondaryText,
+            description,
+          };
+        }
+      );
+
+      return NextResponse.json({ success: true, data: suggestions });
     }
-  } catch (nomErr) {
-    console.warn('Nominatim fallback failed:', nomErr);
-  }
 
-  // Gracefully return empty list so manual typing works uninterrupted
-  return NextResponse.json({ success: true, data: [] });
+    return NextResponse.json({ success: true, data: [] });
+  } catch (err: any) {
+    if (err.name === 'AbortError' || err.name === 'TimeoutError') {
+      console.warn('LocationIQ request timed out for query:', query);
+    } else {
+      console.warn('LocationIQ autocomplete request failed:', err);
+    }
+
+    return NextResponse.json(
+      { success: false, error: 'Location search error', data: [] },
+      { status: 500 }
+    );
+  }
 }
