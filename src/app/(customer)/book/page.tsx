@@ -29,6 +29,11 @@ import {
   validateTravelDateTime,
   validateReturnDateTime,
 } from '@/lib/utils/date';
+import {
+  getAdminBookingWhatsAppUrl,
+  ADMIN_WHATSAPP_NUMBER,
+  formatTripTypeLabel,
+} from '@/lib/utils/whatsapp';
 import LocationAutocompleteInput from '@/components/ui/LocationAutocompleteInput';
 import PassengerCountInput from '@/components/ui/PassengerCountInput';
 
@@ -48,12 +53,14 @@ interface SubmittedBookingData {
   status: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string | null;
   pickupLocation: string;
   dropLocation: string;
   pickupDatetime: string;
   returnDatetime?: string | null;
   tripType: string;
   passengerCount: number;
+  customerNotes?: string | null;
   vehicle?: { name: string; brand: string } | null;
 }
 
@@ -101,6 +108,7 @@ function BookingFormContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submittedBooking, setSubmittedBooking] =
     useState<SubmittedBookingData | null>(null);
+  const [adminWhatsAppUrl, setAdminWhatsAppUrl] = useState<string>('');
   const [copiedRef, setCopiedRef] = useState(false);
 
   // Fetch available vehicles for the selector dropdown
@@ -144,7 +152,34 @@ function BookingFormContent() {
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    // Client-side validations
+    // Step 1: Client-side Form Validation
+    if (!formData.customerName || formData.customerName.trim().length < 2) {
+      setErrorMessage('Please enter your full name (at least 2 characters)');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const cleanedPhone = formData.customerPhone.replace(/[\s\-()]/g, '');
+    const phoneRegex = /^(?:(?:\+|0{0,2})91|0)?[6-9]\d{9}$|^\+[1-9]\d{7,14}$/;
+    if (!cleanedPhone || !phoneRegex.test(cleanedPhone)) {
+      setErrorMessage('Please enter a valid 10-digit mobile or WhatsApp number');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.pickupLocation || formData.pickupLocation.trim().length < 3) {
+      setErrorMessage('Please enter a valid pickup location (at least 3 characters)');
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!formData.dropLocation || formData.dropLocation.trim().length < 3) {
+      setErrorMessage('Please enter a destination / drop location (at least 3 characters)');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Step 2: Validate Travel Date and Time
     if (!formData.pickupDatetime) {
       setErrorMessage('Please select a pickup date and time');
       setIsSubmitting(false);
@@ -186,6 +221,12 @@ function BookingFormContent() {
       }
     }
 
+    // Find selected vehicle name for the notification
+    const selectedVehicle = vehicles.find((v) => v.id === formData.vehicleId);
+    const vehicleDisplayName = selectedVehicle
+      ? `${selectedVehicle.name} (${selectedVehicle.brand})`
+      : 'Let Admin Recommend Best Fleet';
+
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST',
@@ -206,7 +247,35 @@ function BookingFormContent() {
         throw new Error(data.error || 'Failed to submit booking request');
       }
 
-      setSubmittedBooking(data.data);
+      const bookingData: SubmittedBookingData = {
+        ...data.data,
+        customerNotes: formData.customerNotes,
+      };
+
+      // Step 3: Generate WhatsApp click-to-chat URL addressed to Admin (919919379147)
+      const waUrl = getAdminBookingWhatsAppUrl({
+        bookingRef: bookingData.bookingRef,
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        customerEmail: formData.customerEmail,
+        pickupLocation: formData.pickupLocation,
+        dropLocation: formData.dropLocation,
+        pickupDatetime: formData.pickupDatetime,
+        returnDatetime: formData.returnDatetime,
+        tripType: formData.tripType,
+        passengerCount: Number(formData.passengerCount),
+        vehicleName: vehicleDisplayName,
+        customerNotes: formData.customerNotes,
+      });
+
+      setAdminWhatsAppUrl(waUrl);
+      setSubmittedBooking(bookingData);
+
+      // Automatically open WhatsApp chat with Admin in a new tab
+      if (typeof window !== 'undefined') {
+        window.open(waUrl, '_blank');
+      }
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: unknown) {
       setErrorMessage(
@@ -237,12 +306,28 @@ function BookingFormContent() {
           </h1>
           <p className="mt-2 text-sm text-slate-600 max-w-md mx-auto">
             Thank you, <strong>{submittedBooking.customerName}</strong>. Your trip
-            inquiry has been registered. Our fleet coordinator will contact you
-            shortly to confirm driver allocation and trip quote.
+            request has been registered.
           </p>
 
+          {/* User Guidance Banner */}
+          <div className="my-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-xs text-emerald-900 text-left flex items-start gap-3">
+            <MessageCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <strong className="block text-emerald-950 mb-0.5">
+                Your booking request is ready!
+              </strong>
+              <p className="text-emerald-800 leading-relaxed">
+                Please send the pre-filled WhatsApp message to submit your request
+                directly to our travel team (Admin:{' '}
+                <strong>+91 99193 79147</strong>). Our coordinator will contact
+                you on <strong>{submittedBooking.customerPhone}</strong> to confirm
+                vehicle availability and pricing.
+              </p>
+            </div>
+          </div>
+
           {/* Unique Booking Reference Box */}
-          <div className="my-8 bg-slate-50 border-2 border-dashed border-blue-300 rounded-2xl p-6 max-w-md mx-auto text-center">
+          <div className="my-6 bg-slate-50 border-2 border-dashed border-blue-300 rounded-2xl p-6 max-w-md mx-auto text-center">
             <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">
               Your Booking Reference ID
             </span>
@@ -274,7 +359,9 @@ function BookingFormContent() {
             </h3>
             <div className="flex justify-between">
               <span className="text-slate-500">Trip Type:</span>
-              <span className="font-semibold text-slate-900">{submittedBooking.tripType}</span>
+              <span className="font-semibold text-slate-900">
+                {formatTripTypeLabel(submittedBooking.tripType)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Pickup Location:</span>
@@ -316,29 +403,35 @@ function BookingFormContent() {
                 </span>
               </div>
             )}
+            {submittedBooking.customerNotes && (
+              <div className="pt-2 border-t border-slate-200">
+                <span className="text-slate-500 block mb-0.5">Special Requests:</span>
+                <span className="font-medium text-slate-800 italic">{submittedBooking.customerNotes}</span>
+              </div>
+            )}
           </div>
 
           {/* Action CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {adminWhatsAppUrl && (
+              <a
+                href={adminWhatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-bold px-6 py-3.5 rounded-xl shadow-md transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Send WhatsApp to Admin (+91 99193 79147)</span>
+              </a>
+            )}
+
             <Link
               href={`/booking/${submittedBooking.bookingRef}`}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold px-6 py-3.5 rounded-xl shadow-md transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-6 py-3.5 rounded-xl shadow-sm transition-colors"
             >
               <span>Track Booking Progress</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
-
-            <a
-              href={`https://wa.me/${companyConfig.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                `Hello Jay Maa Sheetala Tours & Travel, I have submitted booking inquiry ref: ${submittedBooking.bookingRef}. Please confirm.`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-6 py-3.5 rounded-xl shadow-sm transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>WhatsApp Admin</span>
-            </a>
           </div>
         </div>
       </div>
