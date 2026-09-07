@@ -23,6 +23,12 @@ import {
   PhoneCall,
 } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
+import {
+  parseDateTime,
+  formatToLocalDatetimeInput,
+  validateTravelDateTime,
+  validateReturnDateTime,
+} from '@/lib/utils/date';
 import LocationAutocompleteInput from '@/components/ui/LocationAutocompleteInput';
 import PassengerCountInput from '@/components/ui/PassengerCountInput';
 
@@ -56,11 +62,25 @@ function BookingFormContent() {
   const preSelectedSlug = searchParams.get('vehicle');
   const initialPickup = searchParams.get('pickup') || '';
   const initialDestination = searchParams.get('destination') || '';
-  const initialDate = searchParams.get('date') || '';
+  const rawDate = searchParams.get('date') || '';
+  const initialDate = (() => {
+    if (!rawDate) return '';
+    const parsed = parseDateTime(rawDate);
+    return parsed ? formatToLocalDatetimeInput(parsed) : rawDate;
+  })();
   const initialTripType = searchParams.get('tripType') || 'ONE_WAY';
 
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [isLoadingVehicles, setIsLoadingVehicles] = useState(true);
+  const [minDatetime, setMinDatetime] = useState(() => formatToLocalDatetimeInput(new Date()));
+
+  useEffect(() => {
+    setMinDatetime(formatToLocalDatetimeInput(new Date()));
+    const timer = setInterval(() => {
+      setMinDatetime(formatToLocalDatetimeInput(new Date()));
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -125,26 +145,45 @@ function BookingFormContent() {
     setErrorMessage(null);
 
     // Client-side validations
+    if (!formData.pickupDatetime) {
+      setErrorMessage('Please select a pickup date and time');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const pickupValidation = validateTravelDateTime(formData.pickupDatetime);
+    if (!pickupValidation.isValid) {
+      setErrorMessage(pickupValidation.error || 'Pickup date and time cannot be in the past');
+      setIsSubmitting(false);
+      return;
+    }
+
     if (formData.passengerCount < 1 || formData.passengerCount > 60) {
       setErrorMessage('Passenger count must be between 1 and 60');
       setIsSubmitting(false);
       return;
     }
 
-    if (formData.tripType === 'ROUND_TRIP' && !formData.returnDatetime) {
-      setErrorMessage('Please select a return date and time for round trips');
-      setIsSubmitting(false);
-      return;
-    }
+    if (formData.tripType === 'ROUND_TRIP') {
+      if (!formData.returnDatetime) {
+        setErrorMessage('Please select a return date and time for round trips');
+        setIsSubmitting(false);
+        return;
+      }
 
-    if (
-      formData.tripType === 'ROUND_TRIP' &&
-      formData.returnDatetime &&
-      new Date(formData.returnDatetime) < new Date(formData.pickupDatetime)
-    ) {
-      setErrorMessage('Return date and time must be after pickup date and time');
-      setIsSubmitting(false);
-      return;
+      const returnValidation = validateReturnDateTime(
+        formData.pickupDatetime,
+        formData.returnDatetime,
+        true
+      );
+      if (!returnValidation.isValid) {
+        setErrorMessage(
+          returnValidation.error ||
+            'Return date and time must be after or equal to pickup date and time'
+        );
+        setIsSubmitting(false);
+        return;
+      }
     }
 
     try {
@@ -404,6 +443,7 @@ function BookingFormContent() {
                 <input
                   type="datetime-local"
                   value={formData.pickupDatetime}
+                  min={minDatetime}
                   onChange={(e) =>
                     setFormData({ ...formData, pickupDatetime: e.target.value })
                   }
@@ -419,6 +459,7 @@ function BookingFormContent() {
                 <input
                   type="datetime-local"
                   value={formData.returnDatetime}
+                  min={formData.pickupDatetime || minDatetime}
                   onChange={(e) =>
                     setFormData({ ...formData, returnDatetime: e.target.value })
                   }

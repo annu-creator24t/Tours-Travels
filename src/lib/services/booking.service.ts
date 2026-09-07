@@ -1,6 +1,11 @@
 import prisma from '@/lib/db';
 import { BookingStatus, TripType } from '@prisma/client';
 import { CreateBookingInput, UpdateBookingStatusInput } from '@/lib/validators/booking.schema';
+import {
+  parseDateTime,
+  validateTravelDateTime,
+  validateReturnDateTime,
+} from '@/lib/utils/date';
 import { VehicleService } from './vehicle.service';
 import { DriverService } from './driver.service';
 import { EmailService } from './email.service';
@@ -19,27 +24,28 @@ export class BookingService {
    * Submits a new customer booking request
    */
   static async createBookingRequest(input: CreateBookingInput) {
-    const pickupDate = new Date(input.pickupDatetime);
-    if (isNaN(pickupDate.getTime())) {
+    const pickupDate = parseDateTime(input.pickupDatetime);
+    if (!pickupDate || isNaN(pickupDate.getTime())) {
       throw new Error('Invalid pickup date and time format');
     }
 
-    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-    if (pickupDate.getTime() < fiveMinutesAgo) {
-      throw new Error('Pickup date and time cannot be in the past');
+    const pickupValidation = validateTravelDateTime(pickupDate);
+    if (!pickupValidation.isValid) {
+      throw new Error(pickupValidation.error || 'Pickup date and time cannot be in the past');
     }
 
-    const returnDate = input.returnDatetime ? new Date(input.returnDatetime) : null;
-    if (returnDate && isNaN(returnDate.getTime())) {
+    const returnDate = input.returnDatetime ? parseDateTime(input.returnDatetime) : null;
+    if (input.returnDatetime && (!returnDate || isNaN(returnDate.getTime()))) {
       throw new Error('Invalid return date and time format');
     }
 
-    if (input.tripType === TripType.ROUND_TRIP && !returnDate) {
-      throw new Error('Return date and time is required for round trips');
-    }
-
-    if (returnDate && returnDate.getTime() < pickupDate.getTime()) {
-      throw new Error('Return date and time must be after or equal to pickup date and time');
+    const returnValidation = validateReturnDateTime(
+      pickupDate,
+      returnDate,
+      input.tripType === TripType.ROUND_TRIP
+    );
+    if (!returnValidation.isValid) {
+      throw new Error(returnValidation.error || 'Invalid return date and time');
     }
 
     if (!input.pickupLocation || input.pickupLocation.trim().length < 3) {

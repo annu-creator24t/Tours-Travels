@@ -1,4 +1,9 @@
 import { z } from 'zod';
+import {
+  parseDateTime,
+  validateTravelDateTime,
+  validateReturnDateTime,
+} from '@/lib/utils/date';
 
 export const tripTypeSchema = z.enum(['ONE_WAY', 'ROUND_TRIP', 'LOCAL_RENTAL']);
 
@@ -70,8 +75,8 @@ export const createBookingSchema = z
   })
   .refine(
     (data) => {
-      const pickup = new Date(data.pickupDatetime);
-      return !isNaN(pickup.getTime());
+      const parsed = parseDateTime(data.pickupDatetime);
+      return parsed !== null && !isNaN(parsed.getTime());
     },
     {
       message: 'Invalid pickup date and time format',
@@ -80,45 +85,38 @@ export const createBookingSchema = z
   )
   .refine(
     (data) => {
-      const pickup = new Date(data.pickupDatetime);
-      if (isNaN(pickup.getTime())) return false;
-      // Allow a 5-minute grace period for clock difference/submission latency
-      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-      return pickup.getTime() >= fiveMinutesAgo;
+      const res = validateTravelDateTime(data.pickupDatetime);
+      return res.isValid;
     },
-    {
-      message: 'Pickup date and time cannot be in the past',
-      path: ['pickupDatetime'],
+    (data) => {
+      const res = validateTravelDateTime(data.pickupDatetime);
+      return {
+        message: res.error || 'Pickup date and time cannot be in the past',
+        path: ['pickupDatetime'],
+      };
     }
   )
   .refine(
     (data) => {
-      if (data.tripType === 'ROUND_TRIP') {
-        if (!data.returnDatetime || data.returnDatetime.trim() === '') return false;
-        const pickup = new Date(data.pickupDatetime);
-        const ret = new Date(data.returnDatetime);
-        return !isNaN(ret.getTime()) && ret.getTime() >= pickup.getTime();
-      }
-      return true;
+      const res = validateReturnDateTime(
+        data.pickupDatetime,
+        data.returnDatetime,
+        data.tripType === 'ROUND_TRIP'
+      );
+      return res.isValid;
     },
-    {
-      message: 'Return date & time is required and must be after or equal to pickup date & time for round trips',
-      path: ['returnDatetime'],
-    }
-  )
-  .refine(
     (data) => {
-      if (data.returnDatetime && data.returnDatetime.trim() !== '') {
-        const pickup = new Date(data.pickupDatetime);
-        const ret = new Date(data.returnDatetime);
-        if (isNaN(ret.getTime())) return false;
-        return ret.getTime() >= pickup.getTime();
-      }
-      return true;
-    },
-    {
-      message: 'Return date & time must be after or equal to pickup date & time',
-      path: ['returnDatetime'],
+      const res = validateReturnDateTime(
+        data.pickupDatetime,
+        data.returnDatetime,
+        data.tripType === 'ROUND_TRIP'
+      );
+      return {
+        message:
+          res.error ||
+          'Return date and time must be after or equal to pickup date and time',
+        path: ['returnDatetime'],
+      };
     }
   );
 

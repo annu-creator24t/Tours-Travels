@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -13,6 +13,7 @@ import {
   Compass,
 } from 'lucide-react';
 import { companyConfig } from '@/lib/company.config';
+import { formatToLocalDatetimeInput } from '@/lib/utils/date';
 import LocationAutocompleteInput from '@/components/ui/LocationAutocompleteInput';
 
 export default function HomePage() {
@@ -21,6 +22,15 @@ export default function HomePage() {
   const [destination, setDestination] = useState('');
   const [travelDate, setTravelDate] = useState('');
   const [tripType, setTripType] = useState('ONE_WAY');
+  const [minDatetime, setMinDatetime] = useState(() => formatToLocalDatetimeInput(new Date()));
+
+  useEffect(() => {
+    setMinDatetime(formatToLocalDatetimeInput(new Date()));
+    const timer = setInterval(() => {
+      setMinDatetime(formatToLocalDatetimeInput(new Date()));
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleQuickInquiry = (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,6 +140,7 @@ export default function HomePage() {
                   <input
                     type="datetime-local"
                     value={travelDate}
+                    min={minDatetime}
                     onChange={(e) => setTravelDate(e.target.value)}
                     className="w-full pl-9 pr-2 py-2.5 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
                   />
